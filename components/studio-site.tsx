@@ -127,9 +127,26 @@ export function StudioSite() {
 
   useEffect(() => {
     const stored = window.localStorage.getItem("macm-theme");
-    const nextTheme = stored === "light" ? "light" : "dark";
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
+    const nextTheme = stored === "light" || stored === "dark"
+      ? stored
+      : mediaQuery.matches
+        ? "light"
+        : "dark";
+
     setTheme(nextTheme);
     document.documentElement.dataset.theme = nextTheme;
+
+    const handleDeviceThemeChange = (event: MediaQueryListEvent) => {
+      if (!window.localStorage.getItem("macm-theme")) {
+        const deviceTheme = event.matches ? "light" : "dark";
+        setTheme(deviceTheme);
+        document.documentElement.dataset.theme = deviceTheme;
+      }
+    };
+
+    mediaQuery.addEventListener("change", handleDeviceThemeChange);
+    return () => mediaQuery.removeEventListener("change", handleDeviceThemeChange);
   }, []);
 
   const toggleTheme = () => {
