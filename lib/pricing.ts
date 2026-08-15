@@ -10,7 +10,7 @@ export interface TechStack {
 }
 
 export interface Addon {
-  id: "payments" | "auth" | "api" | "vps";
+  id: "payments" | "auth" | "api" | "dedicated-backup";
   name: string;
   detail: string;
   price: Record<Currency, number>;
@@ -87,6 +87,12 @@ export const ADDONS: Addon[] = [
     name: "Custom API & webhooks",
     detail: "Connect your product with other tools",
     price: { LKR: 30000, USD: 100 },
+  },
+  {
+    id: "dedicated-backup",
+    name: "Custom dedicated backup",
+    detail: "Secure backup of your website",
+    price: { LKR: 10000, USD: 30 },
   },
 ];
 
