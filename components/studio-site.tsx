@@ -166,7 +166,8 @@ export function StudioSite() {
     event.preventDefault();
     setStatus("sending");
     setStatusMessage("");
-    const form = new FormData(event.currentTarget);
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
     const payload = {
       name: form.get("name"),
       email: form.get("email"),
@@ -188,7 +189,7 @@ export function StudioSite() {
       if (!response.ok) throw new Error(result.message || "Unable to send your enquiry.");
       setStatus("sent");
       setStatusMessage(result.message || "Your project brief has been sent.");
-      event.currentTarget.reset();
+      formElement.reset();
       if (summaryRef.current) summaryRef.current.value = pricing.scope.summary;
     } catch (error) {
       setStatus("error");
