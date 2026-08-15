@@ -9,7 +9,6 @@ import {
   CircleDollarSign,
   Code2,
   Database,
-  Gauge,
   Globe2,
   Layers3,
   Mail,
@@ -42,21 +41,21 @@ const SERVICES = [
     index: "01",
     icon: Globe2,
     title: "Custom sites",
-    copy: "Distinctive marketing sites built around your message, engineered for search visibility and instant loading.",
+    copy: "Distinctive marketing sites built around your message, with clear structure, thoughtful content, and search visibility.",
     tech: "Next.js · Astro · SEO",
   },
   {
     index: "02",
     icon: Layers3,
     title: "Managed WordPress",
-    copy: "Tailored themes and intuitive editing, with security, backups, and speed handled after launch.",
+    copy: "Tailored themes and intuitive editing, with security, backups, and ongoing care handled after launch.",
     tech: "Custom themes · Care plans",
   },
   {
     index: "03",
     icon: Database,
     title: "Headless platforms",
-    copy: "Flexible publishing platforms for teams that need a better content workflow without sacrificing performance.",
+    copy: "Flexible publishing platforms for teams that need a better content workflow without locking content to one frontend.",
     tech: "Sanity · Strapi · Next.js",
   },
   {
@@ -212,18 +211,18 @@ export function StudioSite() {
           <div className="hero-grid-lines" aria-hidden="true" />
           <div className="container hero-inner">
             <div className="eyebrow"><span>01 / ENGINEERING STUDIO</span><span className="eyebrow-line" /></div>
-            <h1>Software built<br />to move <em>fast.</em><br />Made to last.</h1>
+            <h1>Websites that<br /><em>work.</em><br />Built with care.</h1>
             <div className="hero-bottom">
-              <p className="hero-copy">Engineering-led web platforms, custom SaaS applications, and high-performance websites — shaped around your business, not a template.</p>
+              <p className="hero-copy">Web design, web development, and custom web applications — shaped around your business, not a template.</p>
               <div className="hero-actions">
                 <button className="button" type="button" onClick={() => scrollTo("#pricing-calculator")}>Launch calculator <ArrowDown size={17} /></button>
                 <button className="text-link" type="button" onClick={() => scrollTo("#process")}>View how we build <ArrowRight size={17} /></button>
               </div>
             </div>
             <div className="metric-strip" aria-label="Project highlights">
-              <div><Gauge /><span><strong>99+</strong> Lighthouse target</span></div>
+              <div><Globe2 /><span><strong>Websites first</strong> Clear, useful experiences</span></div>
               <div><CircleDollarSign /><span><strong>10%</strong> to start</span></div>
-              <div><ServerCog /><span><strong>VPS-ready</strong> Docker delivery</span></div>
+              <div><ServerCog /><span><strong>Right-sized</strong> VPS deployment</span></div>
             </div>
           </div>
         </section>
@@ -231,7 +230,7 @@ export function StudioSite() {
         <section className="section" id="services">
           <div className="container">
             <div className="section-heading">
-              <div><span className="kicker">WHAT WE BUILD</span><h2>Small studio.<br />Serious systems.</h2></div>
+              <div><span className="kicker">WHAT WE BUILD</span><h2>Small studio.<br />Useful websites.</h2></div>
               <p>From a sharp first website to the platform behind your operation, every engagement starts with the right architecture — then removes everything unnecessary.</p>
             </div>
             <div className="services-grid">
@@ -249,7 +248,7 @@ export function StudioSite() {
           <div className="container work-grid">
             <div><span className="kicker">THE STANDARD</span><h2>Clean on the surface.<br />Rigorous underneath.</h2></div>
             <div className="principles">
-              <div><Zap /><span><strong>Performance first</strong>Fast pages, responsive interfaces, efficient infrastructure.</span></div>
+              <div><Zap /><span><strong>Thoughtful foundations</strong>Clear interfaces, sensible loading, dependable infrastructure.</span></div>
               <div><ShieldCheck /><span><strong>Built for ownership</strong>Clean handover, documented systems, no platform lock-in.</span></div>
               <div><Sparkles /><span><strong>Useful by design</strong>Every screen and workflow earns its place.</span></div>
             </div>

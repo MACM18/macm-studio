@@ -9,19 +9,19 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://macm.lk"),
   title: "MACM — Bespoke software, precisely engineered",
   description:
-    "Engineering-led web platforms, custom SaaS applications, and high-performance websites built for ambitious teams.",
+    "Web design, web development, and custom web applications built around ambitious teams.",
   openGraph: {
     title: "MACM — Bespoke software, precisely engineered",
-    description: "High-performance web platforms and custom software, scoped clearly and built to last.",
+    description: "Websites and custom web applications, scoped clearly and built with care.",
     url: "https://macm.lk",
     siteName: "MACM",
     type: "website",
-    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "MACM — Software built to move fast. Made to last." }],
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "MACM — Websites that work. Built with care." }],
   },
   twitter: {
     card: "summary_large_image",
     title: "MACM — Bespoke software, precisely engineered",
-    description: "High-performance web platforms and custom software, scoped clearly and built to last.",
+    description: "Websites and custom web applications, scoped clearly and built with care.",
     images: ["/og.jpg"],
   },
 };

@@ -27,11 +27,33 @@ npm run build
 npm start
 ```
 
-## Lead delivery
+## Contact form delivery
 
-Copy `.env.example` to `.env.local` and set `LEAD_WEBHOOK_URL` to an endpoint that accepts the calculator and contact form JSON payload. This can be a Discord/Telegram relay, n8n webhook, or application API.
+The contact form submits a JSON `POST` request to `/api/lead`. The route validates the lead, adds a submission timestamp, and forwards the payload to `LEAD_WEBHOOK_URL` when configured. This can be a Discord/Telegram relay, n8n webhook, email automation endpoint, or application API.
+
+The `hello@macm.lk` link is a normal `mailto:` link and opens the visitor's mail client; it is separate from the form submission flow.
+
+Copy `.env.example` to `.env.local` and set `LEAD_WEBHOOK_URL`:
+
+```env
+LEAD_WEBHOOK_URL=https://your-webhook.example/lead
+```
 
 If the variable is not set, development submissions are written to the server log.
+
+## GitHub Container Registry
+
+The workflow at `.github/workflows/publish-image.yml` builds the production Docker image and publishes it to GHCR automatically.
+
+- Pushes to `main` publish the `main`, `latest`, and commit-SHA tags.
+- Version tags such as `v1.0.0` publish the matching version tag.
+- Manual runs are available from the GitHub Actions tab.
+
+The workflow uses the repository-provided `GITHUB_TOKEN`; enable repository Actions and package write permissions if GitHub prompts for them. The resulting image is:
+
+```text
+ghcr.io/<github-owner>/<repository>:latest
+```
 
 ## Production with Docker
 
