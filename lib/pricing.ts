@@ -40,7 +40,7 @@ export const TECH_STACKS: TechStack[] = [
     name: "Custom Static Build",
     shortName: "Static site",
     description: "A focused, conversion-ready site with a custom design and clean content structure.",
-    price: { LKR: 65000, USD: 220 },
+    price: { LKR: 45000, USD: 150 },
     delivery: "1–2 weeks",
   },
   {
@@ -48,7 +48,7 @@ export const TECH_STACKS: TechStack[] = [
     name: "WordPress (Managed)",
     shortName: "Managed WordPress",
     description: "A tailored, easy-to-manage website with hardened security and ongoing care.",
-    price: { LKR: 90000, USD: 300 },
+    price: { LKR: 60000, USD: 200 },
     delivery: "Around 2 weeks",
   },
   {
@@ -56,7 +56,7 @@ export const TECH_STACKS: TechStack[] = [
     name: "Headless CMS Build",
     shortName: "Headless CMS",
     description: "A premium publishing experience that keeps editorial workflow separate from the front end.",
-    price: { LKR: 160000, USD: 550 },
+    price: { LKR: 100000, USD: 350 },
     delivery: "3–4 weeks",
   },
   {
@@ -64,7 +64,7 @@ export const TECH_STACKS: TechStack[] = [
     name: "Custom Full-Stack App + Admin Dashboard",
     shortName: "Web app + admin",
     description: "A secure, purpose-built product with business logic, data, accounts, and an admin workspace.",
-    price: { LKR: 280000, USD: 950 },
+    price: { LKR: 150000, USD: 500 },
     delivery: "4–6 weeks",
   },
 ];
@@ -88,15 +88,9 @@ export const ADDONS: Addon[] = [
     detail: "Connect your product with other tools",
     price: { LKR: 30000, USD: 100 },
   },
-  {
-    id: "vps",
-    name: "VPS launch & auto backups",
-    detail: "Docker/Dokploy setup and recovery plan",
-    price: { LKR: 25000, USD: 85 },
-  },
 ];
 
-export const INBOX_PRICE: Record<Currency, number> = { LKR: 1500, USD: 5 };
+export const INBOX_PRICE: Record<Currency, number> = { LKR: 500, USD: 2.49 };
 
 export function formatMoney(amount: number, currency: Currency): string {
   return new Intl.NumberFormat(currency === "LKR" ? "en-LK" : "en-US", {
