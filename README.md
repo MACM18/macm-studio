@@ -55,6 +55,10 @@ The workflow uses the repository-provided `GITHUB_TOKEN`; enable repository Acti
 ghcr.io/<github-owner>/<repository>:latest
 ```
 
+After a successful `main` build and image push, the workflow calls the Dokploy deployment webhook using the GitHub Actions secret `DOKPLOY_WEBHOOK_URL_ONE`. Tag builds and manual runs publish the image but do not trigger the Dokploy application deployment step.
+
+To configure it in GitHub, open **Repository settings → Secrets and variables → Actions → New repository secret**, name it `DOKPLOY_WEBHOOK_URL_ONE`, and paste the Dokploy application webhook URL. Keep the URL secret; anyone who has it may trigger a deployment.
+
 ## Production with Docker
 
 ```bash

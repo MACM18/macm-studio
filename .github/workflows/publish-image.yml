@@ -54,3 +54,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Deploy to Dokploy (Application)
+        if: github.ref == 'refs/heads/main'
+        run: python3 .github/scripts/trigger_webhook.py "${{ secrets.DOKPLOY_WEBHOOK_URL_ONE }}"
