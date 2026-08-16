@@ -7,11 +7,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://macm.lk"),
-  title: "MACM — Bespoke software, precisely engineered",
+  title: "MACM — Websites and web development, built with care",
   description:
     "Web design, web development, and custom web applications built around ambitious teams.",
   openGraph: {
-    title: "MACM — Bespoke software, precisely engineered",
+    title: "MACM — Websites and web development, built with care",
     description: "Websites and custom web applications, scoped clearly and built with care.",
     url: "https://macm.lk",
     siteName: "MACM",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "MACM — Bespoke software, precisely engineered",
+    title: "MACM — Websites and web development, built with care",
     description: "Websites and custom web applications, scoped clearly and built with care.",
     images: ["/og.jpg"],
   },

@@ -41,29 +41,29 @@ const SERVICES = [
     index: "01",
     icon: Globe2,
     title: "Custom sites",
-    copy: "Distinctive marketing sites built around your message, with clear structure, thoughtful content, and search visibility.",
-    tech: "Next.js · Astro · SEO",
+    copy: "A clear, professional website that explains what you do, builds trust, and helps the right visitors get in touch.",
+    tech: "Mobile-ready · Search-friendly · Clear content",
   },
   {
     index: "02",
     icon: Layers3,
     title: "Managed WordPress",
-    copy: "Tailored themes and intuitive editing, with security, backups, and ongoing care handled after launch.",
-    tech: "Custom themes · Care plans",
+    copy: "A website your team can update without waiting on a developer, with ongoing care to keep it secure and up to date.",
+    tech: "Easy editing · Secure · Ongoing care",
   },
   {
     index: "03",
     icon: Database,
     title: "Headless platforms",
-    copy: "Flexible publishing platforms for teams that need a better content workflow without locking content to one frontend.",
-    tech: "Sanity · Strapi · Next.js",
+    copy: "A flexible content setup for growing teams that want to publish often, keep control, and add new sections over time.",
+    tech: "Flexible content · Easy publishing · Ready to grow",
   },
   {
     index: "04",
     icon: Code2,
     title: "Web apps & SaaS",
-    copy: "Purpose-built software with secure accounts, reliable data, payments, integrations, and practical admin tools.",
-    tech: "PostgreSQL · APIs · RBAC",
+    copy: "A custom online tool for the way your business works, with customer accounts, admin areas, payments, and useful automations.",
+    tech: "Customer accounts · Admin tools · Integrations",
   },
 ];
 
@@ -149,6 +149,25 @@ export function StudioSite() {
     return () => mediaQuery.removeEventListener("change", handleDeviceThemeChange);
   }, []);
 
+  useEffect(() => {
+    if (!menuOpen) {
+      document.body.style.overflow = "";
+      return;
+    }
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [menuOpen]);
+
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
@@ -206,18 +225,25 @@ export function StudioSite() {
             <span>MACM</span><i />
           </a>
           <div className="availability"><span /> Available for Q3/Q4 projects</div>
-          <div className={`nav-links ${menuOpen ? "open" : ""}`}>
+          <div id="mobile-nav" className={`nav-links ${menuOpen ? "open" : ""}`} aria-label="Site navigation">
             {NAV_ITEMS.map(([label, href]) => (
               <a key={href} href={href} onClick={() => setMenuOpen(false)}>{label}</a>
             ))}
+            <div className="mobile-nav-controls">
+              <CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} />
+              <button className="icon-button" type="button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme}>
+                {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+              </button>
+              <button className="button" type="button" onClick={() => { setMenuOpen(false); scrollTo("#pricing-calculator"); }}>Plan my website <ArrowRight size={16} /></button>
+            </div>
           </div>
           <div className="nav-actions">
             <CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} />
             <button className="icon-button" type="button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme}>
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <button className="button button-small desktop-cta" type="button" onClick={() => scrollTo("#pricing-calculator")}>Calculate project</button>
-            <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
+            <button className="button button-small desktop-cta" type="button" onClick={() => scrollTo("#pricing-calculator")}>Plan my website</button>
+            <button className="menu-button" type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-controls="mobile-nav" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X /> : <Menu />}
             </button>
           </div>
@@ -228,13 +254,13 @@ export function StudioSite() {
         <section className="hero section-grid">
           <div className="hero-grid-lines" aria-hidden="true" />
           <div className="container hero-inner">
-            <div className="eyebrow"><span>01 / ENGINEERING STUDIO</span><span className="eyebrow-line" /></div>
+            <div className="eyebrow"><span>01 / WEB DEVELOPMENT STUDIO</span><span className="eyebrow-line" /></div>
             <h1>Websites that<br /><em>work.</em><br />Built with care.</h1>
             <div className="hero-bottom">
               <p className="hero-copy">Web design, web development, and custom web applications — shaped around your business, not a template.</p>
               <div className="hero-actions">
-                <button className="button" type="button" onClick={() => scrollTo("#pricing-calculator")}>Launch calculator <ArrowDown size={17} /></button>
-                <button className="text-link" type="button" onClick={() => scrollTo("#process")}>View how we build <ArrowRight size={17} /></button>
+                <button className="button" type="button" onClick={() => scrollTo("#pricing-calculator")}>Plan my website <ArrowDown size={17} /></button>
+                <button className="text-link" type="button" onClick={() => scrollTo("#process")}>See our web development process <ArrowRight size={17} /></button>
               </div>
             </div>
             <div className="metric-strip" aria-label="Project highlights">
@@ -249,7 +275,7 @@ export function StudioSite() {
           <div className="container">
             <div className="section-heading">
               <div><span className="kicker">WHAT WE BUILD</span><h2>Small studio.<br />Useful websites.</h2></div>
-              <p>From a sharp first website to the platform behind your operation, every engagement starts with the right architecture — then removes everything unnecessary.</p>
+              <p>From a first website to the online tools behind your business, every engagement starts with a clear goal and removes everything unnecessary.</p>
             </div>
             <div className="services-grid">
               {SERVICES.map(({ index, icon: Icon, title, copy, tech }) => (
@@ -368,7 +394,7 @@ export function StudioSite() {
 
         <section className="section process-section" id="process">
           <div className="container">
-            <div className="section-heading"><div><span className="kicker">HOW WE DELIVER</span><h2>Four steps.<br />No black boxes.</h2></div><p>Clear gates keep the project predictable. You see working software early and only pay the next milestone when it is earned.</p></div>
+            <div className="section-heading"><div><span className="kicker">HOW WE DELIVER</span><h2>Four steps.<br />No black boxes.</h2></div><p>Clear gates keep the project predictable. You see a working website or web app early and only pay the next milestone when it is earned.</p></div>
             <div className="process-grid">
               {PROCESS.map((step, index) => (
                 <article className="process-card" key={step.no}>
@@ -413,7 +439,7 @@ export function StudioSite() {
 
       <footer>
         <div className="container footer-grid">
-          <div><a className="brand" href="#main"><span>MACM</span><i /></a><p>Bespoke software, precisely engineered in Sri Lanka.</p></div>
+          <div><a className="brand" href="#main"><span>MACM</span><i /></a><p>Websites and web development, built with care in Sri Lanka.</p></div>
           <div><span>LOCAL TIME</span><strong>UTC +05:30 · Colombo</strong></div>
           <div><span>CONTACT</span><a href="mailto:hello@macm.lk">hello@macm.lk</a></div>
           <div><span>© {new Date().getFullYear()} MACM</span><button type="button" onClick={() => scrollTo("#main")}>Back to top ↑</button></div>
