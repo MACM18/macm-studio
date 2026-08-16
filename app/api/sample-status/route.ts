@@ -26,9 +26,18 @@ async function requestSample(url: URL, method: "HEAD" | "GET") {
 
   const finalHost = new URL(response.url).hostname;
   const sameSampleHost = SAMPLE_HOST_PATTERN.test(finalHost);
+  let isHostingPlaceholder = false;
+
+  if (method === "GET" && response.ok) {
+    const html = (await response.text()).slice(0, 200_000).toLowerCase();
+    isHostingPlaceholder = [
+      "this is a placeholder for the subdomain",
+      "placeholder for the subdomain",
+    ].some((marker) => html.includes(marker));
+  }
 
   return {
-    available: sameSampleHost && response.ok,
+    available: sameSampleHost && response.ok && !isHostingPlaceholder,
     status: response.status,
   };
 }
@@ -45,7 +54,9 @@ export async function GET(request: NextRequest) {
     let result = await requestSample(url, "HEAD");
 
     // Some static hosts do not implement HEAD even though the page is live.
-    if (result.status === 405 || result.status === 501) {
+    // A GET is also required when HEAD returns 200 so DirectAdmin's default
+    // subdomain placeholder can be distinguished from a deployed website.
+    if (result.status === 405 || result.status === 501 || result.available) {
       result = await requestSample(url, "GET");
     }
 
