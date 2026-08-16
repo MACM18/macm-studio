@@ -9,6 +9,7 @@ import {
   CircleDollarSign,
   Code2,
   Database,
+  ExternalLink,
   Globe2,
   Layers3,
   Mail,
@@ -67,6 +68,145 @@ const SERVICES = [
   },
 ];
 
+type SampleStatus = "live" | "coming-soon";
+type SampleTheme = "hospitality" | "legal" | "hotel" | "creative" | "wellness" | "property" | "saas" | "commerce" | "education" | "events";
+
+interface SampleProject {
+  id: string;
+  number: string;
+  name: string;
+  category: string;
+  domain: string;
+  description: string;
+  highlights: string[];
+  status: SampleStatus;
+  theme: SampleTheme;
+  previewLabel: string;
+}
+
+const SAMPLE_PROJECTS: SampleProject[] = [
+  {
+    id: "harbor-hearth",
+    number: "01",
+    name: "Harbor & Hearth",
+    category: "Restaurant",
+    domain: "sample1.macm.lk",
+    description: "A warm, editorial restaurant website built to make the menu, story, and next reservation easy to find.",
+    highlights: ["Hero dish photography", "Menu preview", "Chef story", "Opening hours and location", "Reservation CTA", "Mobile-first menu navigation"],
+    status: "live",
+    theme: "hospitality",
+    previewLabel: "Seasonal dining / Colombo",
+  },
+  {
+    id: "northline-legal",
+    number: "02",
+    name: "Northline Legal",
+    category: "Professional Services",
+    domain: "sample2.macm.lk",
+    description: "A calm, trustworthy website concept for a law or consulting firm that needs to explain expertise clearly.",
+    highlights: ["Practice areas", "Attorney profiles", "Client process", "Frequently asked questions", "Consultation CTA", "Trust-focused typography"],
+    status: "coming-soon",
+    theme: "legal",
+    previewLabel: "Counsel / clarity / trust",
+  },
+  {
+    id: "ceylon-house",
+    number: "03",
+    name: "Ceylon House",
+    category: "Boutique Hotel",
+    domain: "sample3.macm.lk",
+    description: "An elegant hospitality website concept that gives the stay, the setting, and the booking journey room to breathe.",
+    highlights: ["Rooms and suites", "Amenities", "Gallery", "Experiences", "Location guide", "Booking enquiry CTA"],
+    status: "coming-soon",
+    theme: "hotel",
+    previewLabel: "Stay slowly / island light",
+  },
+  {
+    id: "aster-form",
+    number: "04",
+    name: "Aster & Form",
+    category: "Interior Design Studio",
+    domain: "sample4.macm.lk",
+    description: "A portfolio-led creative site concept designed to let the work speak first while still making enquiries feel effortless.",
+    highlights: ["Large project gallery", "Case-study pages", "Services", "Studio profile", "Testimonials", "Project enquiry form"],
+    status: "coming-soon",
+    theme: "creative",
+    previewLabel: "Objects / rooms / atmosphere",
+  },
+  {
+    id: "luma-health",
+    number: "05",
+    name: "Luma Health",
+    category: "Wellness Clinic",
+    domain: "sample5.macm.lk",
+    description: "A friendly, reassuring clinic website concept that helps new patients understand their options and take the next step.",
+    highlights: ["Treatments", "Practitioner profiles", "New-patient information", "FAQs", "Appointment CTA", "Contact and location details"],
+    status: "coming-soon",
+    theme: "wellness",
+    previewLabel: "Care / balance / wellbeing",
+  },
+  {
+    id: "kora-estates",
+    number: "06",
+    name: "Kora Estates",
+    category: "Property Development",
+    domain: "sample6.macm.lk",
+    description: "A high-end property marketing concept built to turn a place, its details, and its potential into a confident enquiry.",
+    highlights: ["Featured property", "Floor plans", "Amenities", "Location map", "Image gallery", "Enquiry form"],
+    status: "coming-soon",
+    theme: "property",
+    previewLabel: "A better address / coming home",
+  },
+  {
+    id: "fieldnote",
+    number: "07",
+    name: "Fieldnote",
+    category: "SaaS Product Landing Page",
+    domain: "sample7.macm.lk",
+    description: "A polished product website concept for a productivity app, showing how a digital service can explain its value simply.",
+    highlights: ["Product explanation", "Feature sections", "Pricing cards", "Customer quotes", "FAQ", "Free-trial CTA"],
+    status: "coming-soon",
+    theme: "saas",
+    previewLabel: "Make space for good work",
+  },
+  {
+    id: "mora-coffee",
+    number: "08",
+    name: "Mora Coffee",
+    category: "E-commerce Concept",
+    domain: "sample8.macm.lk",
+    description: "A static storefront concept for a coffee and lifestyle brand, ready to grow into a complete shopping experience.",
+    highlights: ["Product cards", "Product detail sections", "Subscription concept", "Brand story", "Delivery information", "WhatsApp order CTA"],
+    status: "coming-soon",
+    theme: "commerce",
+    previewLabel: "Small batch / daily ritual",
+  },
+  {
+    id: "orbit-learning",
+    number: "09",
+    name: "Orbit Learning",
+    category: "Education Platform",
+    domain: "sample9.macm.lk",
+    description: "A structured course and training website concept that makes programmes, outcomes, and enrolment easy to understand.",
+    highlights: ["Course categories", "Instructor profiles", "Learning outcomes", "Student testimonials", "Enrollment CTA", "FAQ section"],
+    status: "coming-soon",
+    theme: "education",
+    previewLabel: "Learn with direction",
+  },
+  {
+    id: "sora-events",
+    number: "10",
+    name: "Sora Events",
+    category: "Wedding and Events Studio",
+    domain: "sample10.macm.lk",
+    description: "A visual, emotional event-planning concept with a softer voice and a clear path from inspiration to availability enquiry.",
+    highlights: ["Event packages", "Gallery", "Planning process", "Testimonials", "Availability enquiry", "WhatsApp CTA"],
+    status: "coming-soon",
+    theme: "events",
+    previewLabel: "Gather beautifully",
+  },
+];
+
 const PROCESS = [
   {
     no: "01",
@@ -120,6 +260,7 @@ export function StudioSite() {
   const pricing = usePricingCalculator();
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [selectedSample, setSelectedSample] = useState<SampleProject | null>(null);
   const [scopeLocked, setScopeLocked] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -167,6 +308,22 @@ export function StudioSite() {
       document.removeEventListener("keydown", closeOnEscape);
     };
   }, [menuOpen]);
+
+  useEffect(() => {
+    if (!selectedSample) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setSelectedSample(null);
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = "";
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [selectedSample]);
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -288,7 +445,7 @@ export function StudioSite() {
           </div>
         </section>
 
-        <section className="work-section" id="work">
+        <section className="work-section" id="standards">
           <div className="container work-grid">
             <div><span className="kicker">THE STANDARD</span><h2>Clean on the surface.<br />Rigorous underneath.</h2></div>
             <div className="principles">
@@ -296,6 +453,45 @@ export function StudioSite() {
               <div><ShieldCheck /><span><strong>Built for ownership</strong>Clean handover, documented systems, no platform lock-in.</span></div>
               <div><Sparkles /><span><strong>Useful by design</strong>Every screen and workflow earns its place.</span></div>
             </div>
+          </div>
+        </section>
+
+        <section className="section showcase-section" id="work">
+          <div className="container">
+            <div className="section-heading showcase-heading">
+              <div><span className="kicker">SELECTED DIRECTIONS</span><h2>Websites for<br />different worlds.</h2></div>
+              <p>Explore the kinds of websites MACM can shape. One sample is live today; the rest are in the studio queue and ready to become real.</p>
+            </div>
+            <div className="sample-grid">
+              {SAMPLE_PROJECTS.map((project) => (
+                <button
+                  className={`sample-card sample-theme-${project.theme}`}
+                  type="button"
+                  key={project.id}
+                  onClick={() => setSelectedSample(project)}
+                  aria-label={`Open ${project.name} sample project preview`}
+                >
+                  <span className="sample-card-preview" aria-hidden="true">
+                    <span className="sample-mini-browser">
+                      <span className="sample-mini-top"><span className="sample-mini-dots"><i /><i /><i /></span><span className="sample-mini-domain">{project.domain}</span></span>
+                      <span className="sample-mini-content">
+                        <span className="sample-mini-kicker">{project.previewLabel}</span>
+                        <strong>{project.name}</strong>
+                        <span className="sample-mini-lines"><i /><i /><i /></span>
+                        <span className="sample-mini-pills"><i>{project.category}</i><i>{project.status === "live" ? "LIVE" : "SOON"}</i></span>
+                      </span>
+                    </span>
+                  </span>
+                  <span className="sample-card-info">
+                    <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={project.status === "live" ? "sample-status live" : "sample-status"}>{project.status === "live" ? "LIVE SAMPLE" : "COMING SOON"}</span></span>
+                    <strong>{project.name}</strong>
+                    <span>{project.description}</span>
+                    <span className="sample-card-open">Open preview <ArrowRight size={15} /></span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="showcase-footnote"><span /> New samples will appear here as they go live on their own subdomain.</p>
           </div>
         </section>
 
@@ -436,6 +632,34 @@ export function StudioSite() {
           </div>
         </section>
       </main>
+
+      {selectedSample && (
+        <div className="sample-modal-backdrop" role="presentation" onMouseDown={() => setSelectedSample(null)}>
+          <div className="sample-modal" role="dialog" aria-modal="true" aria-labelledby="sample-modal-title" onMouseDown={(event) => event.stopPropagation()}>
+            <div className={`sample-modal-preview sample-theme-${selectedSample.theme}`}>
+              <div className="sample-modal-toolbar"><span className="sample-mini-dots"><i /><i /><i /></span><span>{selectedSample.domain}</span><span className={selectedSample.status === "live" ? "sample-status live" : "sample-status"}>{selectedSample.status === "live" ? "LIVE SAMPLE" : "COMING SOON"}</span></div>
+              {selectedSample.status === "live" ? (
+                <iframe src={`https://${selectedSample.domain}`} title={`${selectedSample.name} live website preview`} loading="lazy" />
+              ) : (
+                <div className="sample-coming-preview"><span className="kicker">IN THE STUDIO</span><strong>{selectedSample.name}</strong><p>This sample is being prepared. The live preview will appear here when the site is launched.</p></div>
+              )}
+            </div>
+            <div className="sample-modal-details">
+              <button className="sample-modal-close" type="button" aria-label="Close sample preview" onClick={() => setSelectedSample(null)}><X size={18} /></button>
+              <span className="kicker">{selectedSample.number} / {selectedSample.category}</span>
+              <h2 id="sample-modal-title">{selectedSample.name}</h2>
+              <p className="sample-modal-domain">{selectedSample.domain}</p>
+              <p>{selectedSample.description}</p>
+              <div className="sample-highlights"><span>Inside the concept</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}><Check size={14} />{highlight}</li>)}</ul></div>
+              {selectedSample.status === "live" ? (
+                <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer">Open live site <ExternalLink size={15} /></a>
+              ) : (
+                <span className="sample-coming-note">Live preview coming soon</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <footer>
         <div className="container footer-grid">
