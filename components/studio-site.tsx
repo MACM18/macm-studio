@@ -208,6 +208,10 @@ const SAMPLE_PROJECTS: SampleProject[] = [
   },
 ];
 
+const FALLBACK_SAMPLE_STATUSES: Record<string, SamplePreviewState> = Object.fromEntries(
+  SAMPLE_PROJECTS.map((project) => [project.domain, project.status === "live" ? "available" : "unavailable"]),
+);
+
 const PROCESS = [
   {
     no: "01",
@@ -257,34 +261,7 @@ function CurrencyToggle({ currency, setCurrency }: { currency: Currency; setCurr
   );
 }
 
-function SamplePreview({ project, onStatusChange }: { project: SampleProject; onStatusChange: (status: SamplePreviewState) => void }) {
-  const [state, setState] = useState<SamplePreviewState>("checking");
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setState("checking");
-    onStatusChange("checking");
-
-    fetch(`/api/sample-status?url=${encodeURIComponent(`https://${project.domain}`)}`, {
-      cache: "no-store",
-      signal: controller.signal,
-    })
-      .then((response) => response.json() as Promise<{ available?: boolean }>)
-      .then((result) => {
-        const nextState = result.available ? "available" : "unavailable";
-        setState(nextState);
-        onStatusChange(nextState);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) {
-          setState("unavailable");
-          onStatusChange("unavailable");
-        }
-      });
-
-    return () => controller.abort();
-  }, [onStatusChange, project.domain]);
-
+function SamplePreview({ project, state }: { project: SampleProject; state: SamplePreviewState }) {
   if (state === "checking") {
     return <div className="sample-preview-checking"><span className="sample-preview-pulse" /><p>Checking {project.domain}…</p></div>;
   }
@@ -307,7 +284,7 @@ export function StudioSite() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [selectedSample, setSelectedSample] = useState<SampleProject | null>(null);
-  const [samplePreviewState, setSamplePreviewState] = useState<SamplePreviewState>("checking");
+  const [sampleStatuses, setSampleStatuses] = useState<Record<string, SamplePreviewState>>(FALLBACK_SAMPLE_STATUSES);
   const [scopeLocked, setScopeLocked] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -373,8 +350,29 @@ export function StudioSite() {
   }, [selectedSample]);
 
   useEffect(() => {
-    setSamplePreviewState("checking");
-  }, [selectedSample]);
+    const controller = new AbortController();
+
+    fetch("/api/sample-status", { cache: "no-store", signal: controller.signal })
+      .then((response) => response.json() as Promise<{ samples?: Record<string, { available?: boolean }> }>)
+      .then((result) => {
+        if (!result.samples) return;
+        setSampleStatuses(Object.fromEntries(
+          SAMPLE_PROJECTS.map((project) => [
+            project.domain,
+            result.samples?.[project.domain]?.available ? "available" : "unavailable",
+          ]),
+        ));
+      })
+      .catch(() => {
+        // Keep the catalog fallback if the status endpoint is unavailable.
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  const selectedSampleStatus = selectedSample
+    ? sampleStatuses[selectedSample.domain] ?? "checking"
+    : "checking";
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -514,8 +512,9 @@ export function StudioSite() {
               <p>Explore the kinds of websites MACM can shape. One sample is live today; the rest are in the studio queue and ready to become real.</p>
             </div>
             <div className="sample-grid">
-              {SAMPLE_PROJECTS.map((project) => (
-                <button
+              {SAMPLE_PROJECTS.map((project) => {
+                const projectStatus = sampleStatuses[project.domain] ?? "checking";
+                return <button
                   className={`sample-card sample-theme-${project.theme}`}
                   type="button"
                   key={project.id}
@@ -529,18 +528,18 @@ export function StudioSite() {
                         <span className="sample-mini-kicker">{project.previewLabel}</span>
                         <strong>{project.name}</strong>
                         <span className="sample-mini-lines"><i /><i /><i /></span>
-                        <span className="sample-mini-pills"><i>{project.category}</i><i>{project.status === "live" ? "LIVE" : "SOON"}</i></span>
+                        <span className="sample-mini-pills"><i>{project.category}</i><i>{projectStatus === "available" ? "LIVE" : projectStatus === "checking" ? "CHECKING" : "SOON"}</i></span>
                       </span>
                     </span>
                   </span>
                   <span className="sample-card-info">
-                    <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={project.status === "live" ? "sample-status live" : "sample-status"}>{project.status === "live" ? "LIVE SAMPLE" : "COMING SOON"}</span></span>
+                    <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={projectStatus === "available" ? "sample-status live" : "sample-status"}>{projectStatus === "available" ? "LIVE SAMPLE" : projectStatus === "checking" ? "CHECKING" : "COMING SOON"}</span></span>
                     <strong>{project.name}</strong>
                     <span>{project.description}</span>
                     <span className="sample-card-open">Open preview <ArrowRight size={15} /></span>
                   </span>
-                </button>
-              ))}
+                </button>;
+              })}
             </div>
             <p className="showcase-footnote"><span /> New samples will appear here as they go live on their own subdomain.</p>
           </div>
@@ -688,8 +687,8 @@ export function StudioSite() {
         <div className="sample-modal-backdrop" role="presentation" onMouseDown={() => setSelectedSample(null)}>
           <div className="sample-modal" role="dialog" aria-modal="true" aria-labelledby="sample-modal-title" onMouseDown={(event) => event.stopPropagation()}>
             <div className={`sample-modal-preview sample-theme-${selectedSample.theme}`}>
-              <div className="sample-modal-toolbar"><span className="sample-mini-dots"><i /><i /><i /></span><span>{selectedSample.domain}</span><span className={samplePreviewState === "available" ? "sample-status live" : "sample-status"}>{samplePreviewState === "available" ? "LIVE SAMPLE" : samplePreviewState === "checking" ? "CHECKING" : "COMING SOON"}</span></div>
-              <SamplePreview project={selectedSample} onStatusChange={setSamplePreviewState} />
+              <div className="sample-modal-toolbar"><span className="sample-mini-dots"><i /><i /><i /></span><span>{selectedSample.domain}</span><span className={selectedSampleStatus === "available" ? "sample-status live" : "sample-status"}>{selectedSampleStatus === "available" ? "LIVE SAMPLE" : selectedSampleStatus === "checking" ? "CHECKING" : "COMING SOON"}</span></div>
+              <SamplePreview project={selectedSample} state={selectedSampleStatus} />
             </div>
             <div className="sample-modal-details">
               <button className="sample-modal-close" type="button" aria-label="Close sample preview" onClick={() => setSelectedSample(null)}><X size={18} /></button>
@@ -698,9 +697,9 @@ export function StudioSite() {
               <p className="sample-modal-domain">{selectedSample.domain}</p>
               <p>{selectedSample.description}</p>
               <div className="sample-highlights"><span>Inside the concept</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}><Check size={14} />{highlight}</li>)}</ul></div>
-              {samplePreviewState === "available" ? (
+              {selectedSampleStatus === "available" ? (
                 <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer">Open live site <ExternalLink size={15} /></a>
-              ) : samplePreviewState === "checking" ? (
+              ) : selectedSampleStatus === "checking" ? (
                 <span className="sample-coming-note">Checking live sample</span>
               ) : (
                 <span className="sample-coming-note">Live preview coming soon</span>
