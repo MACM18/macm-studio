@@ -105,10 +105,10 @@ a { color: inherit; text-decoration: none; }
 .sample-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .sample-card { --sample-bg: #142944; --sample-surface: #1c3b5d; --sample-accent: #5be8ff; --sample-ink: #eef8ff; min-width: 0; padding: 0; overflow: hidden; border: 1px solid rgb(var(--line)); background: rgb(var(--panel) / .5); color: rgb(var(--ink)); text-align: left; cursor: pointer; transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease; }
 .sample-card:hover, .sample-card:focus-visible { transform: translateY(-4px); border-color: var(--sample-accent); box-shadow: 0 18px 42px rgb(0 0 0 / .2); }
-.sample-theme-hospitality { --sample-bg: #302019; --sample-surface: #604233; --sample-accent: #f1c995; --sample-ink: #fff2dc; }
-.sample-theme-legal { --sample-bg: #1a3147; --sample-surface: #2b4e6d; --sample-accent: #b9dcf6; --sample-ink: #eff8ff; }
-.sample-theme-hotel { --sample-bg: #24352f; --sample-surface: #4b6b5c; --sample-accent: #e3c997; --sample-ink: #f8f1df; }
-.sample-theme-creative { --sample-bg: #351f3d; --sample-surface: #704a74; --sample-accent: #f4b9db; --sample-ink: #fff0fa; }
+.sample-theme-hospitality { --sample-bg: #faf7f2; --sample-surface: #1c1917; --sample-accent: #c85a32; --sample-ink: #faf7f2; }
+.sample-theme-legal { --sample-bg: #f8fafc; --sample-surface: #0f172a; --sample-accent: #c5a880; --sample-ink: #f8fafc; }
+.sample-theme-hotel { --sample-bg: #f5efeb; --sample-surface: #1b2e24; --sample-accent: #c5a059; --sample-ink: #f5efeb; }
+.sample-theme-creative { --sample-bg: #f4f4f0; --sample-surface: #0f0f11; --sample-accent: #1d4ed8; --sample-ink: #f4f4f0; }
 .sample-theme-wellness { --sample-bg: #143634; --sample-surface: #2b6861; --sample-accent: #a8f0d7; --sample-ink: #eafff7; }
 .sample-theme-property { --sample-bg: #28231b; --sample-surface: #64533b; --sample-accent: #f0c86f; --sample-ink: #fff5dc; }
 .sample-theme-saas { --sample-bg: #0d2f4d; --sample-surface: #0c5e86; --sample-accent: #5be8ff; --sample-ink: #e8fbff; }

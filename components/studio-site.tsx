@@ -73,7 +73,7 @@ const SERVICES = [
 type SampleStatus = "live" | "coming-soon";
 type SampleTheme = "hospitality" | "legal" | "hotel" | "creative" | "wellness" | "property" | "saas" | "commerce" | "education" | "events";
 type SamplePreviewState = "checking" | "available" | "unavailable";
-type SampleMetadata = { title?: string; description?: string };
+type SampleMetadata = { description?: string };
 
 interface SampleProject {
   id: string;
@@ -357,7 +357,7 @@ export function StudioSite() {
     const controller = new AbortController();
 
     fetch("/api/sample-status", { cache: "no-store", signal: controller.signal })
-      .then((response) => response.json() as Promise<{ samples?: Record<string, { available?: boolean; title?: string; description?: string }> }>)
+      .then((response) => response.json() as Promise<{ samples?: Record<string, { available?: boolean; description?: string }> }>)
       .then((result) => {
         if (!result.samples) return;
         const nextStatuses: Record<string, SamplePreviewState> = {};
@@ -365,8 +365,8 @@ export function StudioSite() {
         SAMPLE_PROJECTS.forEach((project) => {
           const liveData = result.samples?.[project.domain];
           nextStatuses[project.domain] = liveData?.available ? "available" : "unavailable";
-          if (liveData?.available && (liveData.title || liveData.description)) {
-            nextMetadata[project.domain] = { title: liveData.title, description: liveData.description };
+          if (liveData?.available && liveData.description) {
+            nextMetadata[project.domain] = { description: liveData.description };
           }
         });
         setSampleStatuses(nextStatuses);
@@ -525,21 +525,20 @@ export function StudioSite() {
               {SAMPLE_PROJECTS.map((project) => {
                 const projectStatus = sampleStatuses[project.domain] ?? "checking";
                 const liveData = sampleMetadata[project.domain];
-                const projectName = liveData?.title || project.name;
                 const projectDescription = liveData?.description || project.description;
                 return <button
                   className={`sample-card sample-theme-${project.theme}`}
                   type="button"
                   key={project.id}
                   onClick={() => setSelectedSample(project)}
-                  aria-label={`Open ${projectName} sample project preview`}
+                  aria-label={`Open ${project.name} sample project preview`}
                 >
                   <span className="sample-card-preview" aria-hidden="true">
                     <span className="sample-mini-browser">
                       <span className="sample-mini-top"><span className="sample-mini-dots"><i /><i /><i /></span><span className="sample-mini-domain">{project.domain}</span></span>
                       <span className="sample-mini-content">
                         <span className="sample-mini-kicker">{project.previewLabel}</span>
-                        <strong>{projectName}</strong>
+                        <strong>{project.name}</strong>
                         <span className="sample-mini-lines"><i /><i /><i /></span>
                         <span className="sample-mini-pills"><i>{project.category}</i><i>{projectStatus === "available" ? "LIVE" : projectStatus === "checking" ? "CHECKING" : "SOON"}</i></span>
                       </span>
@@ -547,7 +546,7 @@ export function StudioSite() {
                   </span>
                   <span className="sample-card-info">
                     <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={projectStatus === "available" ? "sample-status live" : "sample-status"}>{projectStatus === "available" ? "LIVE SAMPLE" : projectStatus === "checking" ? "CHECKING" : "COMING SOON"}</span></span>
-                    <strong>{projectName}</strong>
+                    <strong>{project.name}</strong>
                     <span>{projectDescription}</span>
                     <span className="sample-card-open">Open preview <ArrowRight size={15} /></span>
                   </span>
@@ -745,7 +744,7 @@ export function StudioSite() {
             <div className="sample-modal-details">
               <button className="sample-modal-close" type="button" aria-label="Close sample preview" onClick={() => setSelectedSample(null)}><X size={18} /></button>
               <span className="kicker">{selectedSample.number} / {selectedSample.category}</span>
-              <h2 id="sample-modal-title">{selectedSampleLiveData?.title || selectedSample.name}</h2>
+              <h2 id="sample-modal-title">{selectedSample.name}</h2>
               <p className="sample-modal-domain">{selectedSample.domain}</p>
               <p>{selectedSampleLiveData?.description || selectedSample.description}</p>
               <div className="sample-highlights"><span>Inside the concept</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}><Check size={14} />{highlight}</li>)}</ul></div>

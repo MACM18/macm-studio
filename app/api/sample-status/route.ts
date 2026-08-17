@@ -19,7 +19,7 @@ const SAMPLE_DOMAINS = [
 const SAMPLE_HOST_PATTERN = /^sample(?:[1-9]|10)\.macm\.lk$/;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-type SampleStatus = { available: boolean; status: number; title?: string; description?: string };
+type SampleStatus = { available: boolean; status: number; description?: string };
 type SampleStatusMap = Record<string, SampleStatus>;
 
 let cachedStatuses: { expiresAt: number; statuses: SampleStatusMap } | null = null;
@@ -57,13 +57,6 @@ async function checkSample(domain: string): Promise<SampleStatus> {
 
     if (!available) return { available, status: response.status };
 
-    const title = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
-      ?.replace(/<[^>]+>/g, "")
-      .replace(/&nbsp;/gi, " ")
-      .replace(/&amp;/gi, "&")
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 120);
     const description = html.match(/<meta\b[^>]*(?:name|property)=["'](?:description|og:description)["'][^>]*content=["']([^"']*)["'][^>]*>/i)?.[1]
       ?.replace(/&nbsp;/gi, " ")
       .replace(/&amp;/gi, "&")
@@ -74,7 +67,6 @@ async function checkSample(domain: string): Promise<SampleStatus> {
     return {
       available,
       status: response.status,
-      ...(title ? { title } : {}),
       ...(description ? { description } : {}),
     };
   } catch {
