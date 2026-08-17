@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
-import { deliverLeadWebhook } from "@/lib/lead-webhook";
+import { deliverLeadNotifications } from "@/lib/lead-notifications";
 import { normalizeEmail } from "@/lib/identity";
 import { milestoneWeightsAreValid } from "@/lib/project-progress";
 import { paymentMilestonesFromScope } from "@/lib/scope";
@@ -85,10 +85,10 @@ export async function returnLeadToPending(leadId: string) {
   revalidatePath(`/admin/leads/${leadId}`);
 }
 
-export async function retryLeadWebhook(leadId: string) {
+export async function retryLeadNotifications(leadId: string) {
   const { user: admin } = await requireAdmin();
-  const delivered = await deliverLeadWebhook(leadId);
-  await audit(admin.id, "lead.webhook_retried", "Lead", leadId, { delivered });
+  const delivered = await deliverLeadNotifications(leadId, { retryOnly: true });
+  await audit(admin.id, "lead.notifications_retried", "Lead", leadId, delivered);
   revalidatePath("/admin");
   revalidatePath(`/admin/leads/${leadId}`);
 }

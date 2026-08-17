@@ -10,7 +10,7 @@ export default async function AdminDashboard() {
     prisma.lead.count({ where: { status: "PENDING" } }),
     prisma.project.count({ where: { status: { in: ["PLANNING", "IN_PROGRESS", "REVIEW", "ON_HOLD"] } } }),
     prisma.projectMilestone.count({ where: { OR: [{ paymentStatus: "OVERDUE" }, { dueDate: { lt: now }, state: { not: "COMPLETE" } }] } }),
-    prisma.lead.count({ where: { webhookStatus: "FAILED" } }),
+    prisma.lead.count({ where: { OR: [{ emailStatus: "FAILED" }, { telegramStatus: "FAILED" }] } }),
     prisma.projectUpdate.count({ where: { notificationStatus: "FAILED" } }),
     prisma.projectUpdate.findMany({ where: { status: "PUBLISHED" }, include: { project: { select: { title: true } }, author: { select: { name: true } } }, orderBy: { publishedAt: "desc" }, take: 6 }),
   ]);

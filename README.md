@@ -44,21 +44,25 @@ Customers cannot register publicly. An administrator reviews a stored lead in `/
 
 OTP and project-update messages use direct authenticated SMTP. Configure SPF, DKIM, and DMARC for the sender domain. Keep `DATABASE_URL`, `BETTER_AUTH_SECRET`, `ADMIN_EMAILS`, and SMTP variables server-only—never prefix them with `NEXT_PUBLIC_`.
 
-## Contact form delivery
+## Contact form notifications
 
-The contact form submits a JSON `POST` request to `/api/lead`. The route validates and rate-limits the request, stores it in PostgreSQL, then forwards the existing payload plus `leadId` to `LEAD_WEBHOOK_URL`.
+The contact form submits a JSON `POST` request to `/api/lead`. The route validates and rate-limits the request, stores it in PostgreSQL, then sends a branded administrative email and a Telegram Bot API alert directly from the backend.
 
-If n8n is unavailable, the saved enquiry is still accepted. The failure is visible in the admin workspace and can be retried from the lead detail screen.
+Email and Telegram delivery are tracked separately. If either channel is unavailable, the saved enquiry is still accepted. Failures are visible in the admin workspace and can be retried without resending a channel that already succeeded.
 
 The `hello@macm.lk` link is a normal `mailto:` link and opens the visitor's mail client; it is separate from the form submission flow.
 
-Set `LEAD_WEBHOOK_URL` to the production n8n webhook:
+Choose the email inbox that should receive new enquiry alerts and add the Telegram bot credentials:
 
 ```env
-LEAD_WEBHOOK_URL=https://your-webhook.example/lead
+LEAD_NOTIFICATION_EMAIL=hello@macm.lk
+TELEGRAM_BOT_TOKEN=123456789:replace-with-botfather-token
+TELEGRAM_CHAT_ID=-1001234567890
+# Optional when posting into a Telegram forum topic:
+TELEGRAM_MESSAGE_THREAD_ID=
 ```
 
-If the variable is not set, the lead remains saved with notification status `NOT_ATTEMPTED`.
+Create the bot with BotFather, add it to the destination group or channel, grant permission to post, and obtain the numeric chat ID. If a channel is not configured, its status remains `NOT_ATTEMPTED`; the lead remains safely stored.
 
 ## Google Analytics
 
@@ -76,7 +80,7 @@ The tag is rendered only on the public homepage; it is absent from `/sign-in`, `
 customer-intent events such as planning a website, locking a project scope,
 opening a sample preview, starting or submitting the enquiry form, opening an
 FAQ, and clicking contact links. Form names, email addresses, phone numbers,
-notes, and webhook payloads are never sent to Analytics.
+notes, and notification content are never sent to Analytics.
 
 To verify the setup, open **Reports → Realtime** in Google Analytics, visit the
 site in a new browser tab, and then interact with a CTA or the enquiry form.

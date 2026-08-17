@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { normalizeEmail } from "@/lib/identity";
-import { deliverLeadWebhook } from "@/lib/lead-webhook";
+import { deliverLeadNotifications } from "@/lib/lead-notifications";
 
 export const runtime = "nodejs";
 
@@ -97,7 +97,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    await deliverLeadWebhook(lead.id);
+    try {
+      await deliverLeadNotifications(lead.id);
+    } catch {
+      // The lead is already stored. Notification infrastructure must not make
+      // the customer resubmit and create a duplicate enquiry.
+    }
     return NextResponse.json({ ok: true, leadId: lead.id, message: "Thanks — your project brief has been received safely." }, { status: 202 });
   } catch {
     return NextResponse.json({ ok: false, message: "We could not save your enquiry. Please try again shortly." }, { status: 503 });

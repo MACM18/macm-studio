@@ -149,9 +149,16 @@ model Lead {
   notes              String?
   scope              Json?
   status             LeadStatus     @default(PENDING)
+  /// Legacy n8n delivery metadata retained for historical migration safety.
   webhookStatus      DeliveryStatus @default(NOT_ATTEMPTED)
   webhookAttempts    Int            @default(0)
   webhookLastError   String?
+  emailStatus        DeliveryStatus @default(NOT_ATTEMPTED)
+  emailAttempts      Int            @default(0)
+  emailLastError     String?
+  telegramStatus     DeliveryStatus @default(NOT_ATTEMPTED)
+  telegramAttempts   Int            @default(0)
+  telegramLastError  String?
   submittedAt        DateTime       @default(now())
   reviewedAt         DateTime?
   approvedCustomerId String?
@@ -163,6 +170,8 @@ model Lead {
   @@index([status, submittedAt])
   @@index([email])
   @@index([webhookStatus])
+  @@index([emailStatus])
+  @@index([telegramStatus])
 }
 
 model LeadSubmissionLimit {
