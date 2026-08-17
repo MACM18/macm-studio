@@ -1,4 +1,4 @@
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-82X4D9K6PB";
+const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-Y05XW5CWG1";
 
 type AnalyticsValue = string | number | boolean;
 
