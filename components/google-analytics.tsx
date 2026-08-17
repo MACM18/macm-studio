@@ -1,11 +1,11 @@
-import { GA_MEASUREMENT_ID } from "@/lib/analytics";
+import { GOOGLE_TAG_ID } from "@/lib/analytics";
 
 export function GoogleAnalytics() {
-  if (!/^G-[A-Z0-9]+$/.test(GA_MEASUREMENT_ID)) return null;
+  if (!/^GT-[A-Z0-9]+$/.test(GOOGLE_TAG_ID)) return null;
 
   return (
     <>
-      <script async src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} />
+      <script async src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_TAG_ID}`} />
       <script
         dangerouslySetInnerHTML={{
           __html: `
@@ -13,7 +13,7 @@ export function GoogleAnalytics() {
           function gtag(){dataLayer.push(arguments);}
           window.gtag = gtag;
           gtag('js', new Date());
-          gtag('config', '${GA_MEASUREMENT_ID}');
+          gtag('config', '${GOOGLE_TAG_ID}');
         `,
         }}
       />

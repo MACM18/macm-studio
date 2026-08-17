@@ -43,12 +43,13 @@ If the variable is not set, development submissions are written to the server lo
 
 ## Google Analytics
 
-The site includes Google Analytics 4 with the public web-stream measurement ID in
-`NEXT_PUBLIC_GA_MEASUREMENT_ID`. Copy the value from `.env.example` into your
-local environment or deployment settings before building if you want to change
-the property:
+The site uses the Google tag ID in `NEXT_PUBLIC_GOOGLE_TAG_ID` and sends data to
+the MACM Studio Analytics web stream in `NEXT_PUBLIC_GA_MEASUREMENT_ID`. Copy
+these public values from `.env.example` into your local environment or
+deployment settings before building if you want to change the property:
 
 ```env
+NEXT_PUBLIC_GOOGLE_TAG_ID=GT-578PGM8R
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-82X4D9K6PB
 ```
 
