@@ -275,6 +275,15 @@ a { color: inherit; text-decoration: none; }
 .process-tag { display: inline-block; margin: 70px 0 14px; color: rgb(var(--signal)); font: 650 9px/1 var(--font-mono); letter-spacing: .08em; }
 .process-card h3 { margin: 0 0 13px; font-size: 19px; font-weight: 570; letter-spacing: -.025em; }
 .process-card p { margin: 0; color: rgb(var(--muted)); font-size: 12px; line-height: 1.65; }
+.faq-section { border-top: 1px solid rgb(var(--line)); background: rgb(var(--panel) / .22); }
+.faq-heading { margin-bottom: 46px; }
+.faq-list { max-width: 900px; border-top: 1px solid rgb(var(--line)); }
+.faq-item { border-bottom: 1px solid rgb(var(--line)); }
+.faq-item summary { display: flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 70px; color: rgb(var(--ink)); cursor: pointer; list-style: none; font-size: 16px; font-weight: 560; letter-spacing: -.02em; }
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary svg { flex: 0 0 auto; color: rgb(var(--signal)); transition: transform .2s ease; }
+.faq-item[open] summary svg { transform: rotate(45deg); }
+.faq-item p { max-width: 760px; margin: -4px 44px 22px 0; color: rgb(var(--muted)); font-size: 13px; line-height: 1.7; }
 
 .contact-section { padding: 132px 0; background: #03132d; color: #eef8ff; }
 :root[data-theme="light"] .contact-section { background: #03132d; color: #eef8ff; }
@@ -367,6 +376,8 @@ footer { padding: 48px 0; border-top: 1px solid rgb(var(--line)); }
   .process-grid { grid-template-columns: 1fr; }
   .process-card, .process-card:nth-child(3) { min-height: 250px; border-left: 1px solid rgb(var(--line)); }
   .process-tag { margin-top: 45px; }
+  .faq-item summary { min-height: 64px; font-size: 14px; }
+  .faq-item p { margin-right: 0; font-size: 12px; }
   .contact-section { padding: 88px 0; }
   .contact-grid { gap: 50px; }
   .lead-form { padding: 22px 17px; }

@@ -28,14 +28,16 @@ import {
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { usePricingCalculator } from "@/hooks/usePricingCalculator";
 import { ADDONS, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, TECH_STACKS, formatMoney } from "@/lib/pricing";
+import { FAQ_ITEMS } from "@/lib/seo";
 
 const formatMaintenanceMoney = (amount: number, currency: Currency) => formatMoney(amount, currency, currency === "USD" ? 2 : 0);
 
 const NAV_ITEMS = [
   ["Services", "#services"],
-  ["Work", "#work"],
+  ["Sample websites", "#work"],
   ["Pricing", "#pricing-calculator"],
   ["Process", "#process"],
+  ["FAQs", "#faq"],
   ["Contact", "#contact"],
 ] as const;
 
@@ -43,28 +45,28 @@ const SERVICES = [
   {
     index: "01",
     icon: Globe2,
-    title: "Custom sites",
+    title: "Custom website design",
     copy: "A clear, professional website that explains what you do, builds trust, and helps the right visitors get in touch.",
     tech: "Mobile-ready · Search-friendly · Clear content",
   },
   {
     index: "02",
     icon: Layers3,
-    title: "Managed WordPress",
+    title: "Managed WordPress websites",
     copy: "A website your team can update without waiting on a developer, with ongoing care to keep it secure and up to date.",
     tech: "Easy editing · Secure · Ongoing care",
   },
   {
     index: "03",
     icon: Database,
-    title: "Headless platforms",
+    title: "Content-managed websites",
     copy: "A flexible content setup for growing teams that want to publish often, keep control, and add new sections over time.",
     tech: "Flexible content · Easy publishing · Ready to grow",
   },
   {
     index: "04",
     icon: Code2,
-    title: "Web apps & SaaS",
+    title: "Web apps & SaaS development",
     copy: "A custom online tool for the way your business works, with customer accounts, admin areas, payments, and useful automations.",
     tech: "Customer accounts · Admin tools · Integrations",
   },
@@ -473,7 +475,7 @@ export function StudioSite() {
             <div className="eyebrow"><span>01 / WEB DEVELOPMENT STUDIO</span><span className="eyebrow-line" /></div>
             <h1>Websites that<br /><em>work.</em><br />Built with care.</h1>
             <div className="hero-bottom">
-              <p className="hero-copy">Web design, web development, and custom web applications — shaped around your business, not a template.</p>
+            <p className="hero-copy">MACM is a Sri Lanka-based web design and web development studio creating thoughtful websites and custom web applications for local businesses and remote teams.</p>
               <div className="hero-actions">
                 <button className="button" type="button" onClick={() => scrollTo("#pricing-calculator")}>Plan my website <ArrowDown size={17} /></button>
                 <button className="text-link" type="button" onClick={() => scrollTo("#process")}>See our web development process <ArrowRight size={17} /></button>
@@ -491,7 +493,7 @@ export function StudioSite() {
           <div className="container">
             <div className="section-heading">
               <div><span className="kicker">WHAT WE BUILD</span><h2>Small studio.<br />Useful websites.</h2></div>
-              <p>From a first website to the online tools behind your business, every engagement starts with a clear goal and removes everything unnecessary.</p>
+              <p>From a first business website to the online tools behind your operations, every engagement starts with a clear goal and removes everything unnecessary.</p>
             </div>
             <div className="services-grid">
               {SERVICES.map(({ index, icon: Icon, title, copy, tech }) => (
@@ -506,7 +508,7 @@ export function StudioSite() {
 
         <section className="work-section" id="standards">
           <div className="container work-grid">
-            <div><span className="kicker">THE STANDARD</span><h2>Clean on the surface.<br />Rigorous underneath.</h2></div>
+            <div><span className="kicker">THE STANDARD</span><h2>Clear for customers.<br />Ready for ownership.</h2></div>
             <div className="principles">
               <div><Zap /><span><strong>Thoughtful foundations</strong>Clear interfaces, sensible loading, dependable infrastructure.</span></div>
               <div><ShieldCheck /><span><strong>Built for ownership</strong>Clean handover, documented systems, no platform lock-in.</span></div>
@@ -519,7 +521,7 @@ export function StudioSite() {
           <div className="container">
             <div className="section-heading showcase-heading">
               <div><span className="kicker">SELECTED DIRECTIONS</span><h2>Websites for<br />different worlds.</h2></div>
-              <p>Explore the kinds of websites MACM can shape. One sample is live today; the rest are in the studio queue and ready to become real.</p>
+              <p>Explore website design examples for restaurants, professional services, hospitality, creative studios, clinics, property, SaaS, commerce, education, and events.</p>
             </div>
             <div className="sample-grid">
               {SAMPLE_PROJECTS.map((project) => {
@@ -560,8 +562,8 @@ export function StudioSite() {
         <section className="section calculator-section" id="pricing-calculator">
           <div className="container">
             <div className="section-heading calculator-heading">
-              <div><span className="kicker">SCOPE YOUR PROJECT</span><h2>A clear estimate,<br />before the first call.</h2></div>
-              <div><p>Select what you need. Your estimate and milestone plan update instantly.</p><CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} /></div>
+              <div><span className="kicker">WEBSITE PRICING</span><h2>A clear estimate,<br />before the first call.</h2></div>
+              <div><p>Plan a website, web application, domain, email setup, and optional maintenance with a transparent starting estimate.</p><CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} /></div>
             </div>
             <div className="calculator-layout">
               <div className="calculator-controls">
@@ -703,12 +705,29 @@ export function StudioSite() {
           </div>
         </section>
 
+        <section className="section faq-section" id="faq">
+          <div className="container faq-layout">
+            <div className="section-heading faq-heading">
+              <div><span className="kicker">COMMON QUESTIONS</span><h2>Useful answers<br />before we talk.</h2></div>
+              <p>Clear answers for businesses planning a website, web application, or a better way to manage their online presence.</p>
+            </div>
+            <div className="faq-list">
+              {FAQ_ITEMS.map((item) => (
+                <details className="faq-item" key={item.question}>
+                  <summary><span>{item.question}</span><Plus size={18} /></summary>
+                  <p>{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section className="contact-section" id="contact">
           <div className="container contact-grid">
             <div className="contact-copy">
               <span className="kicker">START A CONVERSATION</span>
               <h2>Bring us the<br />hard problem.</h2>
-              <p>Tell us what you are building and where you are stuck. We’ll reply with practical next steps — usually within one business day.</p>
+              <p>Tell us what you are building and where you are stuck. We work with Sri Lankan businesses and remote teams, and reply with practical next steps.</p>
               <div className="contact-points"><span><CheckCircle2 /> Direct access to the engineer</span><span><CheckCircle2 /> Clear scope before commitment</span><span><CheckCircle2 /> Your code, infrastructure, and data</span></div>
               <a href="mailto:hello@macm.lk">hello@macm.lk <ArrowRight /></a>
             </div>
