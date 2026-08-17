@@ -1,4 +1,6 @@
 export type Currency = "LKR" | "USD";
+export type MaintenanceBilling = "monthly" | "yearly";
+export type MaintenancePlanId = "none" | "care";
 
 export interface TechStack {
   id: "static" | "wordpress" | "headless" | "fullstack";
@@ -22,6 +24,17 @@ export interface MilestoneBreakdown {
   handover: number;
 }
 
+export interface MaintenanceSelection {
+  plan: MaintenancePlanId;
+  billing: MaintenanceBilling;
+  priority: boolean;
+  monthlyPrice: Record<Currency, number>;
+  yearlyPrice: Record<Currency, number>;
+  selectedPrice: number;
+  domainRenewalIncluded: boolean;
+  summary: string;
+}
+
 export interface ProjectScopePayload {
   currency: Currency;
   stack: TechStack;
@@ -31,6 +44,7 @@ export interface ProjectScopePayload {
   includedInboxes: number;
   total: number;
   milestones: MilestoneBreakdown;
+  maintenance: MaintenanceSelection;
   summary: string;
 }
 
@@ -98,10 +112,32 @@ export const ADDONS: Addon[] = [
 
 export const INBOX_PRICE: Record<Currency, number> = { LKR: 500, USD: 2.49 };
 
-export function formatMoney(amount: number, currency: Currency): string {
+export const MAINTENANCE_CARE = {
+  id: "care" as const,
+  name: "Website Care",
+  monthlyPrice: { LKR: 1500, USD: 3.99 },
+  yearlyPrice: { LKR: 15000, USD: 39.9 },
+  domainRenewal: "1 standard .com or .lk renewal included each year",
+  inclusions: [
+    "Routine website updates",
+    "Backup checks",
+    "Small text or image changes up to 30 minutes per month",
+    "Basic domain and DNS coordination",
+    "Email support for normal website issues",
+  ],
+} as const;
+
+export const MAINTENANCE_PRIORITY = {
+  name: "Priority response",
+  monthlyPrice: { LKR: 2500, USD: 8 },
+  yearlyPrice: { LKR: 25000, USD: 83 },
+  detail: "24-hour acknowledgement and routine fixes targeted within 1–2 business days where possible.",
+} as const;
+
+export function formatMoney(amount: number, currency: Currency, maximumFractionDigits = 0): string {
   return new Intl.NumberFormat(currency === "LKR" ? "en-LK" : "en-US", {
     style: "currency",
     currency,
-    maximumFractionDigits: 0,
+    maximumFractionDigits,
   }).format(amount);
 }

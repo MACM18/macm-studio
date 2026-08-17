@@ -27,7 +27,9 @@ import {
 } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { usePricingCalculator } from "@/hooks/usePricingCalculator";
-import { ADDONS, Currency, INBOX_PRICE, TECH_STACKS, formatMoney } from "@/lib/pricing";
+import { ADDONS, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, TECH_STACKS, formatMoney } from "@/lib/pricing";
+
+const formatMaintenanceMoney = (amount: number, currency: Currency) => formatMoney(amount, currency, currency === "USD" ? 2 : 0);
 
 const NAV_ITEMS = [
   ["Services", "#services"],
@@ -634,6 +636,45 @@ export function StudioSite() {
                 <button className="button lock-button" type="button" onClick={lockScope}>{scopeLocked ? "Scope added to enquiry" : "Lock in this scope"}<ArrowRight size={17} /></button>
                 <small className="estimate-note">Planning estimate only. Final scope is confirmed after a short discovery call.</small>
               </aside>
+            </div>
+            <div className="maintenance-panel">
+              <div className="maintenance-heading">
+                <div>
+                  <span className="kicker">OPTIONAL ONGOING CARE</span>
+                  <h3>Keep your website looked after.</h3>
+                  <p>Choose simple website care after development is complete and your website has been handed over. {MAINTENANCE_CARE.domainRenewal}.</p>
+                </div>
+                <div className="maintenance-billing" role="group" aria-label="Maintenance billing period">
+                  {(["monthly", "yearly"] as const).map((billing) => (
+                    <button key={billing} type="button" className={pricing.maintenanceBilling === billing ? "active" : ""} aria-pressed={pricing.maintenanceBilling === billing} onClick={() => pricing.setMaintenanceBilling(billing)}>
+                      {billing === "monthly" ? "Monthly" : "Yearly · 2 months free"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="maintenance-grid">
+                <button
+                  type="button"
+                  className={`maintenance-card ${pricing.maintenancePlan === "care" ? "selected" : ""}`}
+                  aria-pressed={pricing.maintenancePlan === "care"}
+                  onClick={() => pricing.setMaintenancePlan(pricing.maintenancePlan === "care" ? "none" : "care")}
+                >
+                  <span className="maintenance-card-top"><span>RECOMMENDED</span><i>{pricing.maintenancePlan === "care" ? "SELECTED" : "OPTIONAL"}</i></span>
+                  <strong>{MAINTENANCE_CARE.name}</strong>
+                  <span className="maintenance-price">{formatMaintenanceMoney(MAINTENANCE_CARE[pricing.maintenanceBilling === "monthly" ? "monthlyPrice" : "yearlyPrice"][pricing.currency], pricing.currency)}<small>/{pricing.maintenanceBilling === "monthly" ? "month" : "year"}</small></span>
+                  <span className="maintenance-card-copy">Keep the essentials in order while you focus on running the business.</span>
+                  <ul>{MAINTENANCE_CARE.inclusions.map((inclusion) => <li key={inclusion}><Check size={14} />{inclusion}</li>)}</ul>
+                </button>
+                <label className={`maintenance-priority ${pricing.maintenancePriority ? "selected" : ""} ${pricing.maintenancePlan !== "care" ? "disabled" : ""}`}>
+                  <input type="checkbox" checked={pricing.maintenancePriority} disabled={pricing.maintenancePlan !== "care"} onChange={pricing.toggleMaintenancePriority} />
+                  <span className="check-mark">{pricing.maintenancePriority && <Check size={13} />}</span>
+                  <span className="maintenance-priority-copy"><strong>{MAINTENANCE_PRIORITY.name}</strong><small>+{formatMaintenanceMoney(MAINTENANCE_PRIORITY[pricing.maintenanceBilling === "monthly" ? "monthlyPrice" : "yearlyPrice"][pricing.currency], pricing.currency)} / {pricing.maintenanceBilling === "monthly" ? "month" : "year"}</small><p>{MAINTENANCE_PRIORITY.detail}</p><i>Complex requests are scoped and scheduled separately.</i></span>
+                </label>
+              </div>
+              <div className="maintenance-footnote">
+                <span>{pricing.maintenancePlan === "care" ? `Recurring care: ${formatMaintenanceMoney(pricing.scope.maintenance.selectedPrice, pricing.currency)} / ${pricing.maintenanceBilling === "monthly" ? "month" : "year"}` : "No recurring plan selected"}</span>
+                <small>New pages, redesigns, major changes, server work, premium domains, and third-party fees are quoted separately.</small>
+              </div>
             </div>
           </div>
         </section>
