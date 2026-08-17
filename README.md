@@ -49,7 +49,7 @@ local environment or deployment settings before building if you want to change
 the property:
 
 ```env
-NEXT_PUBLIC_GA_MEASUREMENT_ID=G-Y05XW5CWG1
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-82X4D9K6PB
 ```
 
 The tag loads after the page becomes interactive. It records page views and
