@@ -811,7 +811,7 @@ export function StudioSite() {
         <div className="container footer-grid">
           <div><a className="brand" href="#main"><span>MACM</span><i /></a><p>Websites and web development, built with care in Sri Lanka.</p></div>
           <div><span>LOCAL TIME</span><strong>UTC +05:30 · Colombo</strong></div>
-          <div><span>CONTACT</span><a href="mailto:hello@macm.lk" onClick={() => trackEvent("email_contact_click", { location: "footer" })}>hello@macm.lk</a></div>
+          <div><span>CONTACT</span><a href="mailto:hello@macm.lk" onClick={() => trackEvent("email_contact_click", { location: "footer" })}>hello@macm.lk</a><a href="/sign-in" onClick={() => trackEvent("client_portal_click", { location: "footer" })}>Client sign in</a></div>
           <div><span>© {new Date().getFullYear()} MACM</span><button type="button" onClick={() => scrollTo("#main")}>Back to top ↑</button></div>
         </div>
       </footer>

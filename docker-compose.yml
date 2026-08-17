@@ -7,6 +7,17 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL is required}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-5}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET is required}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-https://macm.lk}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:?ADMIN_EMAILS is required}
+      SMTP_HOST: ${SMTP_HOST:?SMTP_HOST is required}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:?SMTP_USER is required}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:?SMTP_PASSWORD is required}
+      MAIL_FROM: ${MAIL_FROM:-MACM Studio <no-reply@macm.lk>}
       LEAD_WEBHOOK_URL: ${LEAD_WEBHOOK_URL:-}
     ports:
       - "3000:3000"

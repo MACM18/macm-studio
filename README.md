@@ -2,18 +2,20 @@
 
 Engineering-led studio website and interactive project estimator for [macm.lk](https://macm.lk).
 
-The site includes a responsive service overview, LKR/USD pricing calculator, 10/50/40 milestone breakdown, business inbox add-on, scope handoff, and a lead form backed by `/api/lead`.
+The application includes the public studio site, interactive project estimator, persisted lead intake, an invitation-only customer portal, and an administrative project workspace.
 
 ## Requirements
 
 - Node.js 22+
 - npm
 - Docker (optional, for production-style local runs)
+- PostgreSQL 14+ for portal, authentication, and lead data
 
 ## Local development
 
 ```bash
 npm install
+npm run db:deploy
 npm run dev
 ```
 
@@ -27,19 +29,36 @@ npm run build
 npm start
 ```
 
+## Database and client access
+
+Copy `.env.example` to `.env.local`, provide a PostgreSQL connection, then apply the committed migration:
+
+```bash
+npm run db:validate
+npm run db:deploy
+```
+
+Use `npm run db:migrate` only while creating new migrations in local development. Production containers run `prisma migrate deploy` before the Next.js server starts and stop if migration deployment fails.
+
+Customers cannot register publicly. An administrator reviews a stored lead in `/admin/leads` and approves it; that transaction creates or activates the customer and prepares a draft project. The customer can then sign in at `/sign-in` using an emailed six-digit code. The first OTP request for an address in `ADMIN_EMAILS` bootstraps its administrator account.
+
+OTP and project-update messages use direct authenticated SMTP. Configure SPF, DKIM, and DMARC for the sender domain. Keep `DATABASE_URL`, `BETTER_AUTH_SECRET`, `ADMIN_EMAILS`, and SMTP variables server-only—never prefix them with `NEXT_PUBLIC_`.
+
 ## Contact form delivery
 
-The contact form submits a JSON `POST` request to `/api/lead`. The route validates the lead, adds a submission timestamp, and forwards the payload to `LEAD_WEBHOOK_URL` when configured. This can be a Discord/Telegram relay, n8n webhook, email automation endpoint, or application API.
+The contact form submits a JSON `POST` request to `/api/lead`. The route validates and rate-limits the request, stores it in PostgreSQL, then forwards the existing payload plus `leadId` to `LEAD_WEBHOOK_URL`.
+
+If n8n is unavailable, the saved enquiry is still accepted. The failure is visible in the admin workspace and can be retried from the lead detail screen.
 
 The `hello@macm.lk` link is a normal `mailto:` link and opens the visitor's mail client; it is separate from the form submission flow.
 
-Copy `.env.example` to `.env.local` and set `LEAD_WEBHOOK_URL`:
+Set `LEAD_WEBHOOK_URL` to the production n8n webhook:
 
 ```env
 LEAD_WEBHOOK_URL=https://your-webhook.example/lead
 ```
 
-If the variable is not set, development submissions are written to the server log.
+If the variable is not set, the lead remains saved with notification status `NOT_ATTEMPTED`.
 
 ## Google Analytics
 
@@ -53,7 +72,7 @@ NEXT_PUBLIC_GOOGLE_TAG_ID=GT-578PGM8R
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-82X4D9K6PB
 ```
 
-The tag loads after the page becomes interactive. It records page views and
+The tag is rendered only on the public homepage; it is absent from `/sign-in`, `/portal`, and `/admin`. It records page views and
 customer-intent events such as planning a website, locking a project scope,
 opening a sample preview, starting or submitting the enquiry form, opening an
 FAQ, and clicking contact links. Form names, email addresses, phone numbers,
@@ -87,7 +106,9 @@ To configure it in GitHub, open **Repository settings → Secrets and variables 
 docker compose up -d --build
 ```
 
-The container exposes port `3000` and uses the optimized Next.js standalone runtime. In Dokploy, point the service domain to port 3000 and set `LEAD_WEBHOOK_URL` in the environment settings.
+The container exposes port `3000`, deploys committed Prisma migrations before accepting traffic, and then runs the optimized Next.js standalone server. In Dokploy, keep PostgreSQL on the private service network, do not publish port `5432`, point the public domain to the web container on port `3000`, and configure every variable in `.env.example`.
+
+Before deploying a future migration that removes or rewrites data, take a PostgreSQL backup. The initial portal migration is additive.
 
 ## Project structure
 
@@ -96,4 +117,8 @@ The container exposes port `3000` and uses the optimized Next.js standalone runt
 - `hooks/usePricingCalculator.ts` — calculator state and milestone math
 - `lib/pricing.ts` — typed pricing data and formatting helpers
 - `app/api/lead/route.ts` — validated lead submission endpoint
+- `app/sign-in` — passwordless client and administrator sign-in
+- `app/portal` — customer-owned project views and profile
+- `app/admin` — lead, client, project, payment, update, and audit management
+- `prisma/schema.prisma` / `prisma/migrations` — database model and committed migration history
 - `Dockerfile` / `docker-compose.yml` — standalone production runtime

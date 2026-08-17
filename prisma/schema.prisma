@@ -1,0 +1,264 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum LeadStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum DeliveryStatus {
+  NOT_ATTEMPTED
+  PENDING
+  SENT
+  FAILED
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  REVIEW
+  ON_HOLD
+  COMPLETE
+  CANCELLED
+}
+
+enum PortalVisibility {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MilestoneState {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  COMPLETE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  NOT_APPLICABLE
+}
+
+enum UpdateStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model User {
+  id            String          @id @default(cuid())
+  name          String
+  email         String          @unique
+  emailVerified Boolean         @default(false)
+  image         String?
+  company       String?
+  phone         String?
+  role          UserRole        @default(CLIENT)
+  status        UserStatus      @default(ACTIVE)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  projects      Project[]       @relation("ProjectOwner")
+  approvedLeads Lead[]          @relation("ApprovedCustomer")
+  approvedBy    Lead[]          @relation("LeadApprover")
+  updates       ProjectUpdate[]
+  auditLogs     AuditLog[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([expiresAt])
+}
+
+model RateLimit {
+  id          String @id @default(cuid())
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+}
+
+model Lead {
+  id                 String         @id @default(cuid())
+  name               String
+  email              String
+  phone              String?
+  projectType        String
+  budgetSummary      String?
+  notes              String?
+  scope              Json?
+  status             LeadStatus     @default(PENDING)
+  webhookStatus      DeliveryStatus @default(NOT_ATTEMPTED)
+  webhookAttempts    Int            @default(0)
+  webhookLastError   String?
+  submittedAt        DateTime       @default(now())
+  reviewedAt         DateTime?
+  approvedCustomerId String?
+  approvedById       String?
+  approvedCustomer   User?          @relation("ApprovedCustomer", fields: [approvedCustomerId], references: [id], onDelete: SetNull)
+  approvedBy         User?          @relation("LeadApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  project            Project?
+
+  @@index([status, submittedAt])
+  @@index([email])
+  @@index([webhookStatus])
+}
+
+model LeadSubmissionLimit {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Project {
+  id          String             @id @default(cuid())
+  title       String
+  summary     String?
+  status      ProjectStatus      @default(PLANNING)
+  visibility  PortalVisibility   @default(DRAFT)
+  startDate   DateTime?
+  targetDate  DateTime?
+  publishedAt DateTime?
+  ownerId     String
+  leadId      String?            @unique
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  owner       User               @relation("ProjectOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  lead        Lead?              @relation(fields: [leadId], references: [id], onDelete: SetNull)
+  milestones  ProjectMilestone[]
+  updates     ProjectUpdate[]
+  links       ProjectLink[]
+
+  @@index([ownerId, visibility])
+  @@index([status])
+}
+
+model ProjectMilestone {
+  id              String         @id @default(cuid())
+  projectId       String
+  title           String
+  description     String?
+  sortOrder       Int
+  weight          Int
+  progress        Int            @default(0)
+  state           MilestoneState @default(NOT_STARTED)
+  dueDate         DateTime?
+  completedAt     DateTime?
+  paymentAmount   Int?
+  paymentCurrency String?
+  paymentStatus   PaymentStatus  @default(PENDING)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sortOrder])
+  @@index([projectId])
+  @@index([paymentStatus])
+}
+
+model ProjectUpdate {
+  id                 String         @id @default(cuid())
+  projectId          String
+  authorId           String
+  title              String
+  body               String
+  status             UpdateStatus   @default(DRAFT)
+  publishedAt        DateTime?
+  notificationStatus DeliveryStatus @default(NOT_ATTEMPTED)
+  notificationError  String?
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  project            Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  author             User           @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([projectId, status, publishedAt])
+}
+
+model ProjectLink {
+  id        String   @id @default(cuid())
+  projectId String
+  label     String
+  url       String
+  sortOrder Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sortOrder])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+}

@@ -5,7 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: "/api/",
+      disallow: ["/api/", "/sign-in", "/portal", "/admin"],
     },
     sitemap: "https://macm.lk/sitemap.xml",
   };
