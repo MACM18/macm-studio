@@ -45,7 +45,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body><GoogleAnalytics />{children}</body>
+      <head><GoogleAnalytics /></head>
+      <body>{children}</body>
     </html>
   );
 }
