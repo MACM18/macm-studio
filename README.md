@@ -41,6 +41,27 @@ LEAD_WEBHOOK_URL=https://your-webhook.example/lead
 
 If the variable is not set, development submissions are written to the server log.
 
+## Google Analytics
+
+The site includes Google Analytics 4 with the public web-stream measurement ID in
+`NEXT_PUBLIC_GA_MEASUREMENT_ID`. Copy the value from `.env.example` into your
+local environment or deployment settings before building if you want to change
+the property:
+
+```env
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-82X4D9K6PB
+```
+
+The tag loads after the page becomes interactive. It records page views and
+customer-intent events such as planning a website, locking a project scope,
+opening a sample preview, starting or submitting the enquiry form, opening an
+FAQ, and clicking contact links. Form names, email addresses, phone numbers,
+notes, and webhook payloads are never sent to Analytics.
+
+To verify the setup, open **Reports → Realtime** in Google Analytics, visit the
+site in a new browser tab, and then interact with a CTA or the enquiry form.
+Use **Admin → Data display → DebugView** when testing with Analytics Debugger.
+
 ## GitHub Container Registry
 
 The workflow at `.github/workflows/publish-image.yml` builds the production Docker image and publishes it to GHCR automatically.

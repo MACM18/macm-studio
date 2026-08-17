@@ -29,6 +29,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { usePricingCalculator } from "@/hooks/usePricingCalculator";
 import { ADDONS, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, TECH_STACKS, formatMoney } from "@/lib/pricing";
 import { FAQ_ITEMS } from "@/lib/seo";
+import { trackEvent } from "@/lib/analytics";
 
 const formatMaintenanceMoney = (amount: number, currency: Currency) => formatMoney(amount, currency, currency === "USD" ? 2 : 0);
 
@@ -294,6 +295,7 @@ export function StudioSite() {
   const [scopeLocked, setScopeLocked] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState("");
+  const leadStartedRef = useRef(false);
   const summaryRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -391,11 +393,24 @@ export function StudioSite() {
     setTheme(nextTheme);
     document.documentElement.dataset.theme = nextTheme;
     window.localStorage.setItem("macm-theme", nextTheme);
+    trackEvent("theme_changed", { theme: nextTheme });
+  };
+
+  const handlePlanWebsiteClick = (location: string) => {
+    trackEvent("plan_website_click", { location });
+    setMenuOpen(false);
+    scrollTo("#pricing-calculator");
   };
 
   const lockScope = () => {
     setScopeLocked(true);
     setStatus("idle");
+    trackEvent("scope_locked", {
+      project_type: pricing.scope.stack.id,
+      currency: pricing.currency,
+      maintenance_plan: pricing.scope.maintenance.plan,
+      maintenance_priority: pricing.scope.maintenance.priority,
+    });
     window.setTimeout(() => scrollTo("#contact"), 80);
   };
 
@@ -426,11 +441,17 @@ export function StudioSite() {
       if (!response.ok) throw new Error(result.message || "Unable to send your enquiry.");
       setStatus("sent");
       setStatusMessage(result.message || "Your project brief has been sent.");
+      trackEvent("lead_submitted", {
+        project_type: String(form.get("projectType") || "unspecified"),
+        currency: pricing.currency,
+        maintenance_plan: pricing.scope.maintenance.plan,
+      });
       formElement.reset();
       if (summaryRef.current) summaryRef.current.value = pricing.scope.summary;
     } catch (error) {
       setStatus("error");
       setStatusMessage(error instanceof Error ? error.message : "Unable to send your enquiry.");
+      trackEvent("lead_submit_error");
     }
   };
 
@@ -452,7 +473,7 @@ export function StudioSite() {
               <button className="icon-button" type="button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme}>
                 {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
               </button>
-              <button className="button" type="button" onClick={() => { setMenuOpen(false); scrollTo("#pricing-calculator"); }}>Plan my website <ArrowRight size={16} /></button>
+              <button className="button" type="button" onClick={() => handlePlanWebsiteClick("mobile_navigation")}>Plan my website <ArrowRight size={16} /></button>
             </div>
           </div>
           <div className="nav-actions">
@@ -460,7 +481,7 @@ export function StudioSite() {
             <button className="icon-button" type="button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme}>
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <button className="button button-small desktop-cta" type="button" onClick={() => scrollTo("#pricing-calculator")}>Plan my website</button>
+            <button className="button button-small desktop-cta" type="button" onClick={() => handlePlanWebsiteClick("desktop_navigation")}>Plan my website</button>
             <button className="menu-button" type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-controls="mobile-nav" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X /> : <Menu />}
             </button>
@@ -477,7 +498,7 @@ export function StudioSite() {
             <div className="hero-bottom">
             <p className="hero-copy">MACM is a Sri Lanka-based web design and web development studio creating thoughtful websites and custom web applications for local businesses and remote teams.</p>
               <div className="hero-actions">
-                <button className="button" type="button" onClick={() => scrollTo("#pricing-calculator")}>Plan my website <ArrowDown size={17} /></button>
+                <button className="button" type="button" onClick={() => handlePlanWebsiteClick("hero")}>Plan my website <ArrowDown size={17} /></button>
                 <button className="text-link" type="button" onClick={() => scrollTo("#process")}>See our web development process <ArrowRight size={17} /></button>
               </div>
             </div>
@@ -532,7 +553,10 @@ export function StudioSite() {
                   className={`sample-card sample-theme-${project.theme}`}
                   type="button"
                   key={project.id}
-                  onClick={() => setSelectedSample(project)}
+                  onClick={() => {
+                    setSelectedSample(project);
+                    trackEvent("sample_preview_open", { project: project.id, category: project.category });
+                  }}
                   aria-label={`Open ${project.name} sample project preview`}
                 >
                   <span className="sample-card-preview" aria-hidden="true">
@@ -669,7 +693,11 @@ export function StudioSite() {
                   type="button"
                   className={`maintenance-card ${pricing.maintenancePlan === "care" ? "selected" : ""}`}
                   aria-pressed={pricing.maintenancePlan === "care"}
-                  onClick={() => pricing.setMaintenancePlan(pricing.maintenancePlan === "care" ? "none" : "care")}
+                  onClick={() => {
+                    const plan = pricing.maintenancePlan === "care" ? "none" : "care";
+                    pricing.setMaintenancePlan(plan);
+                    trackEvent("maintenance_plan_selected", { plan, billing: pricing.maintenanceBilling });
+                  }}
                 >
                   <span className="maintenance-card-top"><span>RECOMMENDED</span><i>{pricing.maintenancePlan === "care" ? "SELECTED" : "OPTIONAL"}</i></span>
                   <strong>{MAINTENANCE_CARE.name}</strong>
@@ -678,7 +706,7 @@ export function StudioSite() {
                   <ul>{MAINTENANCE_CARE.inclusions.map((inclusion) => <li key={inclusion}><Check size={14} />{inclusion}</li>)}</ul>
                 </button>
                 <label className={`maintenance-priority ${pricing.maintenancePriority ? "selected" : ""} ${pricing.maintenancePlan !== "care" ? "disabled" : ""}`}>
-                  <input type="checkbox" checked={pricing.maintenancePriority} disabled={pricing.maintenancePlan !== "care"} onChange={pricing.toggleMaintenancePriority} />
+                  <input type="checkbox" checked={pricing.maintenancePriority} disabled={pricing.maintenancePlan !== "care"} onChange={() => { pricing.toggleMaintenancePriority(); trackEvent("maintenance_priority_changed", { enabled: !pricing.maintenancePriority }); }} />
                   <span className="check-mark">{pricing.maintenancePriority && <Check size={13} />}</span>
                   <span className="maintenance-priority-copy"><strong>{MAINTENANCE_PRIORITY.name}</strong><small>+{formatMaintenanceMoney(MAINTENANCE_PRIORITY[pricing.maintenanceBilling === "monthly" ? "monthlyPrice" : "yearlyPrice"][pricing.currency], pricing.currency)} / {pricing.maintenanceBilling === "monthly" ? "month" : "year"}</small><p>{MAINTENANCE_PRIORITY.detail}</p><i>Complex requests are scoped and scheduled separately.</i></span>
                 </label>
@@ -713,7 +741,7 @@ export function StudioSite() {
             </div>
             <div className="faq-list">
               {FAQ_ITEMS.map((item) => (
-                <details className="faq-item" key={item.question}>
+                <details className="faq-item" key={item.question} onToggle={(event) => { if (event.currentTarget.open) trackEvent("faq_opened", { question: item.question }); }}>
                   <summary><span>{item.question}</span><Plus size={18} /></summary>
                   <p>{item.answer}</p>
                 </details>
@@ -729,9 +757,9 @@ export function StudioSite() {
               <h2>Bring us the<br />hard problem.</h2>
               <p>Tell us what you are building and where you are stuck. We work with Sri Lankan businesses and remote teams, and reply with practical next steps.</p>
               <div className="contact-points"><span><CheckCircle2 /> Direct access to the engineer</span><span><CheckCircle2 /> Clear scope before commitment</span><span><CheckCircle2 /> Your code, infrastructure, and data</span></div>
-              <a href="mailto:hello@macm.lk">hello@macm.lk <ArrowRight /></a>
+              <a href="mailto:hello@macm.lk" onClick={() => trackEvent("email_contact_click", { location: "contact" })}>hello@macm.lk <ArrowRight /></a>
             </div>
-            <form className="lead-form" onSubmit={submitLead}>
+            <form className="lead-form" onSubmit={submitLead} onFocus={() => { if (!leadStartedRef.current) { leadStartedRef.current = true; trackEvent("lead_form_started"); } }}>
               <input className="honeypot" tabIndex={-1} autoComplete="off" name="website" aria-hidden="true" />
               <div className="field-row">
                 <label><span>Your name *</span><input name="name" required maxLength={120} placeholder="How should we address you?" /></label>
@@ -768,7 +796,7 @@ export function StudioSite() {
               <p>{selectedSampleLiveData?.description || selectedSample.description}</p>
               <div className="sample-highlights"><span>Inside the concept</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}><Check size={14} />{highlight}</li>)}</ul></div>
               {selectedSampleStatus === "available" ? (
-                <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer">Open live site <ExternalLink size={15} /></a>
+                <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer" onClick={() => trackEvent("sample_live_site_click", { project: selectedSample.id })}>Open live site <ExternalLink size={15} /></a>
               ) : selectedSampleStatus === "checking" ? (
                 <span className="sample-coming-note">Checking live sample</span>
               ) : (
@@ -783,7 +811,7 @@ export function StudioSite() {
         <div className="container footer-grid">
           <div><a className="brand" href="#main"><span>MACM</span><i /></a><p>Websites and web development, built with care in Sri Lanka.</p></div>
           <div><span>LOCAL TIME</span><strong>UTC +05:30 · Colombo</strong></div>
-          <div><span>CONTACT</span><a href="mailto:hello@macm.lk">hello@macm.lk</a></div>
+          <div><span>CONTACT</span><a href="mailto:hello@macm.lk" onClick={() => trackEvent("email_contact_click", { location: "footer" })}>hello@macm.lk</a></div>
           <div><span>© {new Date().getFullYear()} MACM</span><button type="button" onClick={() => scrollTo("#main")}>Back to top ↑</button></div>
         </div>
       </footer>
