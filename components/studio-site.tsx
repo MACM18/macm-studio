@@ -73,6 +73,7 @@ const SERVICES = [
 type SampleStatus = "live" | "coming-soon";
 type SampleTheme = "hospitality" | "legal" | "hotel" | "creative" | "wellness" | "property" | "saas" | "commerce" | "education" | "events";
 type SamplePreviewState = "checking" | "available" | "unavailable";
+type SampleMetadata = { title?: string; description?: string };
 
 interface SampleProject {
   id: string;
@@ -98,7 +99,7 @@ const SAMPLE_PROJECTS: SampleProject[] = [
     highlights: ["Hero dish photography", "Menu preview", "Chef story", "Opening hours and location", "Reservation CTA", "Mobile-first menu navigation"],
     status: "live",
     theme: "hospitality",
-    previewLabel: "Seasonal dining / Colombo",
+    previewLabel: "Wood-fired / coastal cuisine",
   },
   {
     id: "northline-legal",
@@ -110,7 +111,7 @@ const SAMPLE_PROJECTS: SampleProject[] = [
     highlights: ["Practice areas", "Attorney profiles", "Client process", "Frequently asked questions", "Consultation CTA", "Trust-focused typography"],
     status: "coming-soon",
     theme: "legal",
-    previewLabel: "Counsel / clarity / trust",
+    previewLabel: "Strategic counsel / discretion",
   },
   {
     id: "ceylon-house",
@@ -122,7 +123,7 @@ const SAMPLE_PROJECTS: SampleProject[] = [
     highlights: ["Rooms and suites", "Amenities", "Gallery", "Experiences", "Location guide", "Booking enquiry CTA"],
     status: "coming-soon",
     theme: "hotel",
-    previewLabel: "Stay slowly / island light",
+    previewLabel: "Tropical modernism / quiet luxury",
   },
   {
     id: "aster-form",
@@ -134,7 +135,7 @@ const SAMPLE_PROJECTS: SampleProject[] = [
     highlights: ["Large project gallery", "Case-study pages", "Services", "Studio profile", "Testimonials", "Project enquiry form"],
     status: "coming-soon",
     theme: "creative",
-    previewLabel: "Objects / rooms / atmosphere",
+    previewLabel: "Architectural interiors / cobalt grid",
   },
   {
     id: "luma-health",
@@ -287,6 +288,7 @@ export function StudioSite() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [selectedSample, setSelectedSample] = useState<SampleProject | null>(null);
   const [sampleStatuses, setSampleStatuses] = useState<Record<string, SamplePreviewState>>(FALLBACK_SAMPLE_STATUSES);
+  const [sampleMetadata, setSampleMetadata] = useState<Record<string, SampleMetadata>>({});
   const [scopeLocked, setScopeLocked] = useState(false);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [statusMessage, setStatusMessage] = useState("");
@@ -355,15 +357,20 @@ export function StudioSite() {
     const controller = new AbortController();
 
     fetch("/api/sample-status", { cache: "no-store", signal: controller.signal })
-      .then((response) => response.json() as Promise<{ samples?: Record<string, { available?: boolean }> }>)
+      .then((response) => response.json() as Promise<{ samples?: Record<string, { available?: boolean; title?: string; description?: string }> }>)
       .then((result) => {
         if (!result.samples) return;
-        setSampleStatuses(Object.fromEntries(
-          SAMPLE_PROJECTS.map((project) => [
-            project.domain,
-            result.samples?.[project.domain]?.available ? "available" : "unavailable",
-          ]),
-        ));
+        const nextStatuses: Record<string, SamplePreviewState> = {};
+        const nextMetadata: Record<string, SampleMetadata> = {};
+        SAMPLE_PROJECTS.forEach((project) => {
+          const liveData = result.samples?.[project.domain];
+          nextStatuses[project.domain] = liveData?.available ? "available" : "unavailable";
+          if (liveData?.available && (liveData.title || liveData.description)) {
+            nextMetadata[project.domain] = { title: liveData.title, description: liveData.description };
+          }
+        });
+        setSampleStatuses(nextStatuses);
+        setSampleMetadata(nextMetadata);
       })
       .catch(() => {
         // Keep the catalog fallback if the status endpoint is unavailable.
@@ -375,6 +382,7 @@ export function StudioSite() {
   const selectedSampleStatus = selectedSample
     ? sampleStatuses[selectedSample.domain] ?? "checking"
     : "checking";
+  const selectedSampleLiveData = selectedSample ? sampleMetadata[selectedSample.domain] : undefined;
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -516,19 +524,22 @@ export function StudioSite() {
             <div className="sample-grid">
               {SAMPLE_PROJECTS.map((project) => {
                 const projectStatus = sampleStatuses[project.domain] ?? "checking";
+                const liveData = sampleMetadata[project.domain];
+                const projectName = liveData?.title || project.name;
+                const projectDescription = liveData?.description || project.description;
                 return <button
                   className={`sample-card sample-theme-${project.theme}`}
                   type="button"
                   key={project.id}
                   onClick={() => setSelectedSample(project)}
-                  aria-label={`Open ${project.name} sample project preview`}
+                  aria-label={`Open ${projectName} sample project preview`}
                 >
                   <span className="sample-card-preview" aria-hidden="true">
                     <span className="sample-mini-browser">
                       <span className="sample-mini-top"><span className="sample-mini-dots"><i /><i /><i /></span><span className="sample-mini-domain">{project.domain}</span></span>
                       <span className="sample-mini-content">
                         <span className="sample-mini-kicker">{project.previewLabel}</span>
-                        <strong>{project.name}</strong>
+                        <strong>{projectName}</strong>
                         <span className="sample-mini-lines"><i /><i /><i /></span>
                         <span className="sample-mini-pills"><i>{project.category}</i><i>{projectStatus === "available" ? "LIVE" : projectStatus === "checking" ? "CHECKING" : "SOON"}</i></span>
                       </span>
@@ -536,8 +547,8 @@ export function StudioSite() {
                   </span>
                   <span className="sample-card-info">
                     <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={projectStatus === "available" ? "sample-status live" : "sample-status"}>{projectStatus === "available" ? "LIVE SAMPLE" : projectStatus === "checking" ? "CHECKING" : "COMING SOON"}</span></span>
-                    <strong>{project.name}</strong>
-                    <span>{project.description}</span>
+                    <strong>{projectName}</strong>
+                    <span>{projectDescription}</span>
                     <span className="sample-card-open">Open preview <ArrowRight size={15} /></span>
                   </span>
                 </button>;
@@ -734,9 +745,9 @@ export function StudioSite() {
             <div className="sample-modal-details">
               <button className="sample-modal-close" type="button" aria-label="Close sample preview" onClick={() => setSelectedSample(null)}><X size={18} /></button>
               <span className="kicker">{selectedSample.number} / {selectedSample.category}</span>
-              <h2 id="sample-modal-title">{selectedSample.name}</h2>
+              <h2 id="sample-modal-title">{selectedSampleLiveData?.title || selectedSample.name}</h2>
               <p className="sample-modal-domain">{selectedSample.domain}</p>
-              <p>{selectedSample.description}</p>
+              <p>{selectedSampleLiveData?.description || selectedSample.description}</p>
               <div className="sample-highlights"><span>Inside the concept</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}><Check size={14} />{highlight}</li>)}</ul></div>
               {selectedSampleStatus === "available" ? (
                 <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer">Open live site <ExternalLink size={15} /></a>
