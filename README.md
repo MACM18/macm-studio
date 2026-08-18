@@ -52,6 +52,22 @@ Email and Telegram delivery are tracked separately. If either channel is unavail
 
 The `hello@macm.lk` link is a normal `mailto:` link and opens the visitor's mail client; it is separate from the form submission flow.
 
+## Client meeting bookings
+
+The client portal links approved customers to a Google Calendar Appointment Schedule. Configure the schedule in Google Calendar with 30-minute Google Meet appointments and these availability windows (Asia/Colombo): weekdays 8:00 PM–9:30 PM, Saturday 5:00 PM–9:00 PM, and Sunday 8:00 AM–6:00 PM. Set the minimum notice and booking horizon in Google Calendar as required.
+
+Add the booking page URL and service-account access to the deployment environment:
+
+```env
+GOOGLE_BOOKING_PAGE_URL=https://calendar.google.com/calendar/appointments/...
+GOOGLE_CALENDAR_ID=your-calendar-id
+GOOGLE_SERVICE_ACCOUNT_EMAIL=calendar-reader@your-project.iam.gserviceaccount.com
+GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+GOOGLE_CALENDAR_TIME_ZONE=Asia/Colombo
+```
+
+Share the configured calendar with the service-account email using **See all event details** access so `/portal/appointments` and `/admin/appointments` can read attendees and confirmed Meet links. Keep the private key server-only. Google Booking Pages are public to anyone who has the URL, so only expose the portal entry point in the client workspace and enable Google email verification for forwarded links.
+
 Choose the email inbox that should receive new enquiry alerts and add the Telegram bot credentials:
 
 ```env

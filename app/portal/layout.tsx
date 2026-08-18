@@ -8,5 +8,5 @@ export const metadata: Metadata = { title: "Client workspace | MACM", robots: { 
 
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const { user } = await requireClient();
-  return <WorkspaceShell title="Your projects" eyebrow="CLIENT WORKSPACE" userName={user.name} nav={[{ href: "/portal", label: "Projects" }, { href: "/portal/profile", label: "Profile" }]}>{children}</WorkspaceShell>;
+  return <WorkspaceShell title="Your projects" eyebrow="CLIENT WORKSPACE" userName={user.name} nav={[{ href: "/portal", label: "Projects" }, { href: "/portal/book", label: "Book a meeting" }, { href: "/portal/appointments", label: "Appointments" }, { href: "/portal/profile", label: "Profile" }]}>{children}</WorkspaceShell>;
 }

@@ -8,5 +8,5 @@ export const metadata: Metadata = { title: "Admin workspace | MACM", robots: { i
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const { user } = await requireAdmin();
-  return <WorkspaceShell title="Studio overview" eyebrow="ADMIN WORKSPACE" userName={user.name} nav={[{ href: "/admin", label: "Dashboard" }, { href: "/admin/leads", label: "Leads" }, { href: "/admin/clients", label: "Clients" }, { href: "/admin/projects", label: "Projects" }, { href: "/admin/audit", label: "Audit" }]}>{children}</WorkspaceShell>;
+  return <WorkspaceShell title="Studio overview" eyebrow="ADMIN WORKSPACE" userName={user.name} nav={[{ href: "/admin", label: "Dashboard" }, { href: "/admin/leads", label: "Leads" }, { href: "/admin/clients", label: "Clients" }, { href: "/admin/projects", label: "Projects" }, { href: "/admin/appointments", label: "Appointments" }, { href: "/admin/audit", label: "Audit" }]}>{children}</WorkspaceShell>;
 }
