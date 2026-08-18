@@ -54,10 +54,7 @@ export async function sendLeadNotificationEmail(input: {
   id: string;
   name: string;
   email: string;
-  phone: string | null;
   projectType: string;
-  budgetSummary: string | null;
-  notes: string | null;
   submittedAt: Date;
 }) {
   const recipient = process.env.LEAD_NOTIFICATION_EMAIL;
@@ -66,21 +63,19 @@ export async function sendLeadNotificationEmail(input: {
   const details = [
     ["Name", input.name],
     ["Email", input.email],
-    ["Phone", input.phone || "Not provided"],
     ["Project", input.projectType],
     ["Submitted", input.submittedAt.toLocaleString("en-LK", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Colombo" })],
   ];
   const rows = details.map(([label, value]) => `<tr><td style="padding:10px 0;color:#64748b;font-size:12px;border-bottom:1px solid #e3effb">${escapeHtml(label)}</td><td style="padding:10px 0 10px 18px;color:#10203f;font-weight:600;border-bottom:1px solid #e3effb">${escapeHtml(value)}</td></tr>`).join("");
-  const section = (label: string, value: string | null) => value ? `<div style="margin-top:24px"><div style="color:#64748b;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">${escapeHtml(label)}</div><div style="margin-top:9px;padding:16px;border-radius:14px;background:#f3f9ff;color:#33445f;line-height:1.65;white-space:pre-line">${escapeHtml(value)}</div></div>` : "";
   await mailTransport().sendMail({
     from: from(),
     to: recipient,
     replyTo: input.email,
     subject: `New MACM enquiry — ${input.projectType}`,
-    text: `New MACM website enquiry\n\nName: ${input.name}\nEmail: ${input.email}\nPhone: ${input.phone || "Not provided"}\nProject: ${input.projectType}\n\n${input.budgetSummary || ""}\n\nNotes: ${input.notes || "Not provided"}\n\nReview: ${adminUrl}`,
+    text: `New MACM website enquiry\n\nName: ${input.name}\nEmail: ${input.email}\nProject: ${input.projectType}\n\nThe full project brief is available in the secure admin workspace.\n\nReview: ${adminUrl}`,
     html: emailFrame(
       "A new website enquiry arrived.",
-      `<p style="margin:0 0 22px;color:#42516a;line-height:1.7">The enquiry has been saved securely. Review it in the admin workspace before approving client access.</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${rows}</table>${section("Selected scope", input.budgetSummary)}${section("Customer notes", input.notes)}<p style="margin:26px 0 0"><a href="${escapeHtml(adminUrl)}" style="display:inline-block;background:#0070f3;color:#fff;text-decoration:none;font-weight:700;padding:13px 20px;border-radius:999px">Review enquiry</a></p>`,
+      `<p style="margin:0 0 22px;color:#42516a;line-height:1.7">The enquiry has been saved securely. Review the complete brief in the admin workspace before approving client access.</p><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${rows}</table><p style="margin:22px 0 0;padding:16px;border-radius:14px;background:#f3f9ff;color:#33445f;line-height:1.65">Pricing details and customer notes are intentionally kept inside the secure admin workspace.</p><p style="margin:26px 0 0"><a href="${escapeHtml(adminUrl)}" style="display:inline-block;background:#0070f3;color:#fff;text-decoration:none;font-weight:700;padding:13px 20px;border-radius:999px">Review enquiry</a></p>`,
       "Replying to this email sends your response directly to the customer.",
     ),
   });

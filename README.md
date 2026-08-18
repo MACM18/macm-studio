@@ -42,6 +42,21 @@ Use `npm run db:migrate` only while creating new migrations in local development
 
 Customers cannot register publicly. An administrator reviews a stored lead in `/admin/leads` and approves it; that transaction creates or activates the customer and prepares a draft project. The customer can then sign in at `/sign-in` using an emailed six-digit code. The first OTP request for an address in `ADMIN_EMAILS` bootstraps its administrator account.
 
+### Customer-data encryption
+
+High-risk enquiry and project fields are encrypted in the application with authenticated AES-256-GCM before they are written to PostgreSQL. Login email identifiers remain normalized and searchable for authentication; OTP values remain hashed. Generate a 32-byte base64 key locally with `npm run data:key`, then store it only as the Dokploy runtime secret `DATA_ENCRYPTION_KEY` (never in Git, Docker build arguments, browser variables, or the database). Keep `DATA_ENCRYPTION_KEY_PREVIOUS` only during a planned key rotation.
+
+After taking and verifying a production PostgreSQL backup, validate the migration and preview the backfill:
+
+```bash
+npm run db:validate
+npm run db:deploy
+npm run data:backfill
+npm run data:backfill -- --apply --confirm-backup
+```
+
+The backfill is never run by the application start command. It verifies each value immediately after encryption and reports counts only. Existing plaintext columns are retained for a staged fallback read; nulling them is a separate, reviewed cleanup migration after backup and restore testing. For production PostgreSQL, configure a private connection with TLS and use `sslmode=verify-full` in `DATABASE_URL` when the server certificate and hostname verification are available. Do not use a broad `sslmode=require` as a substitute for certificate verification when stronger verification is supported.
+
 OTP and project-update messages use direct authenticated SMTP. Configure SPF, DKIM, and DMARC for the sender domain. Keep `DATABASE_URL`, `BETTER_AUTH_SECRET`, `ADMIN_EMAILS`, and SMTP variables server-only—never prefix them with `NEXT_PUBLIC_`.
 
 ## Contact form notifications

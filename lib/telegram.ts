@@ -8,30 +8,21 @@ export async function sendLeadTelegramAlert(input: {
   id: string;
   name: string;
   email: string;
-  phone: string | null;
   projectType: string;
-  budgetSummary: string | null;
-  notes: string | null;
 }) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
   if (!token || !chatId) throw new Error("Telegram lead alerts are not configured.");
 
   const adminUrl = `${process.env.BETTER_AUTH_URL ?? "https://macm.lk"}/admin/leads/${encodeURIComponent(input.id)}`;
-  const budget = escapeTelegram((input.budgetSummary || "No calculator summary").slice(0, 1500));
-  const notes = escapeTelegram((input.notes || "No additional notes").slice(0, 900));
   const message = [
     "🚀 <b>New MACM website enquiry</b>",
     "",
     `👤 <b>${escapeTelegram(input.name)}</b>`,
     `✉️ <code>${escapeTelegram(input.email)}</code>`,
-    `📞 ${escapeTelegram(input.phone || "Not provided")}`,
     `🧭 <b>${escapeTelegram(input.projectType)}</b>`,
     "",
-    "💰 <b>Selected scope</b>",
-    `<pre>${budget}</pre>`,
-    "📝 <b>Customer notes</b>",
-    notes,
+    "🔒 Full pricing details and customer notes are available only in the secure admin workspace.",
     "",
     `🔗 <a href="${escapeTelegram(adminUrl)}">Review and approve in MACM</a>`,
   ].join("\n");

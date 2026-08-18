@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { normalizeEmail } from "@/lib/identity";
 import { deliverLeadNotifications } from "@/lib/lead-notifications";
+import { writePrivateJson, writePrivateText } from "@/lib/private-data";
 
 export const runtime = "nodejs";
 
@@ -89,11 +90,14 @@ export async function POST(request: NextRequest) {
       data: {
         name: body.name.trim(),
         email,
-        phone: typeof body.phone === "string" ? body.phone.trim().slice(0, 40) || null : null,
+        phone: null,
+        phoneEncrypted: writePrivateText(typeof body.phone === "string" ? body.phone.trim().slice(0, 40) || null : null),
         projectType: body.projectType.trim(),
-        budgetSummary: typeof body.budgetSummary === "string" ? body.budgetSummary.slice(0, 4000) || null : null,
-        notes: typeof body.notes === "string" ? body.notes.trim().slice(0, 4000) || null : null,
-        scope: safeJson(body.scope),
+        budgetSummary: null,
+        budgetSummaryEncrypted: writePrivateText(typeof body.budgetSummary === "string" ? body.budgetSummary.slice(0, 4000) || null : null),
+        notes: null,
+        notesEncrypted: writePrivateText(typeof body.notes === "string" ? body.notes.trim().slice(0, 4000) || null : null),
+        scopeEncrypted: writePrivateJson(safeJson(body.scope)),
       },
     });
 

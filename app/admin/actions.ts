@@ -10,6 +10,7 @@ import { normalizeEmail } from "@/lib/identity";
 import { milestoneWeightsAreValid } from "@/lib/project-progress";
 import { paymentMilestonesFromScope } from "@/lib/scope";
 import { sendProjectUpdateEmail } from "@/lib/email";
+import { readPrivateJson, readPrivateText, writePrivateText } from "@/lib/private-data";
 
 const text = (formData: FormData, key: string, maximum: number) => String(formData.get(key) ?? "").trim().slice(0, maximum);
 const optionalDate = (value: string) => value ? new Date(`${value}T00:00:00.000Z`) : null;
@@ -29,20 +30,25 @@ export async function approveLead(leadId: string) {
     if (lead.status === "REJECTED") throw new Error("Rejected leads must be returned to pending before approval.");
 
     const email = normalizeEmail(lead.email);
+    const leadPhone = readPrivateText(lead.phoneEncrypted, lead.phone);
+    const leadNotes = readPrivateText(lead.notesEncrypted, lead.notes);
+    const leadBudgetSummary = readPrivateText(lead.budgetSummaryEncrypted, lead.budgetSummary);
+    const leadScope = readPrivateJson(lead.scopeEncrypted, lead.scope);
     const customer = await tx.user.upsert({
       where: { email },
-      create: { email, name: lead.name, phone: lead.phone, emailVerified: true, role: "CLIENT", status: "ACTIVE" },
-      update: { name: lead.name, phone: lead.phone, emailVerified: true, status: "ACTIVE" },
+      create: { email, name: lead.name, phone: null, phoneEncrypted: writePrivateText(leadPhone), emailVerified: true, role: "CLIENT", status: "ACTIVE" },
+      update: { name: lead.name, phone: null, phoneEncrypted: writePrivateText(leadPhone), emailVerified: true, status: "ACTIVE" },
     });
     if (customer.role !== "CLIENT") throw new Error("An administrator account cannot be converted into a customer.");
 
-    const payments = paymentMilestonesFromScope(lead.scope);
+    const payments = paymentMilestonesFromScope(leadScope);
     const project = await tx.project.create({
       data: {
         ownerId: customer.id,
         leadId: lead.id,
         title: lead.projectType,
-        summary: lead.notes || lead.budgetSummary,
+        summary: null,
+        summaryEncrypted: writePrivateText(leadNotes || leadBudgetSummary),
         milestones: {
           create: [
             { sortOrder: 1, title: "Planning and direction", description: "Scope, content, and visual direction are agreed.", weight: 20, paymentAmount: payments.kickoff, paymentCurrency: payments.currency },
@@ -119,7 +125,7 @@ export async function updateClientProfile(clientId: string, formData: FormData) 
   if (!client) throw new Error("Client not found.");
   const emailChanged = client.email !== values.email;
   await prisma.$transaction(async (tx) => {
-    await tx.user.update({ where: { id: clientId }, data: { name: values.name, email: values.email, company: values.company || null, phone: values.phone || null } });
+    await tx.user.update({ where: { id: clientId }, data: { name: values.name, email: values.email, company: null, companyEncrypted: writePrivateText(values.company), phone: null, phoneEncrypted: writePrivateText(values.phone) } });
     if (emailChanged) {
       await tx.session.deleteMany({ where: { userId: clientId } });
       await tx.verification.deleteMany({ where: { identifier: { contains: client.email } } });
@@ -149,7 +155,8 @@ export async function updateProject(projectId: string, formData: FormData) {
     where: { id: projectId },
     data: {
       title: values.title,
-      summary: values.summary || null,
+      summary: null,
+      summaryEncrypted: writePrivateText(values.summary),
       status: values.status,
       visibility: values.visibility,
       startDate: optionalDate(values.startDate),
@@ -221,7 +228,7 @@ export async function addProjectLink(projectId: string, formData: FormData) {
   const url = z.string().url().refine((value) => new URL(value).protocol === "https:", "Only HTTPS links are allowed.").parse(text(formData, "url", 2000));
   if (!label) throw new Error("A link label is required.");
   const last = await prisma.projectLink.aggregate({ where: { projectId }, _max: { sortOrder: true } });
-  const link = await prisma.projectLink.create({ data: { projectId, label, url, sortOrder: (last._max.sortOrder ?? 0) + 1 } });
+  const link = await prisma.projectLink.create({ data: { projectId, label, url: null, urlEncrypted: writePrivateText(url), sortOrder: (last._max.sortOrder ?? 0) + 1 } });
   await audit(admin.id, "project_link.created", "ProjectLink", link.id, { projectId });
   revalidatePath(`/admin/projects/${projectId}`);
   revalidatePath(`/portal/projects/${projectId}`);
@@ -240,7 +247,7 @@ export async function createProjectUpdate(projectId: string, formData: FormData)
   const title = text(formData, "title", 160);
   const body = text(formData, "body", 8000);
   if (title.length < 2 || body.length < 2) throw new Error("An update needs a title and message.");
-  const update = await prisma.projectUpdate.create({ data: { projectId, authorId: admin.id, title, body } });
+  const update = await prisma.projectUpdate.create({ data: { projectId, authorId: admin.id, title, body: null, bodyEncrypted: writePrivateText(body) } });
   await audit(admin.id, "project_update.created", "ProjectUpdate", update.id, { projectId });
   revalidatePath(`/admin/projects/${projectId}`);
 }
@@ -252,7 +259,7 @@ export async function updateDraftProjectUpdate(updateId: string, formData: FormD
   if (title.length < 2 || body.length < 2) throw new Error("An update needs a title and message.");
   const existing = await prisma.projectUpdate.findUnique({ where: { id: updateId }, select: { projectId: true, status: true } });
   if (!existing || existing.status !== "DRAFT") throw new Error("Only draft updates can be edited.");
-  await prisma.projectUpdate.update({ where: { id: updateId }, data: { title, body } });
+  await prisma.projectUpdate.update({ where: { id: updateId }, data: { title, body: null, bodyEncrypted: writePrivateText(body) } });
   await audit(admin.id, "project_update.edited", "ProjectUpdate", updateId, { projectId: existing.projectId });
   revalidatePath(`/admin/projects/${existing.projectId}`);
 }
@@ -266,7 +273,7 @@ async function notifyUpdate(updateId: string) {
       customerName: update.project.owner.name,
       projectTitle: update.project.title,
       updateTitle: update.title,
-      updateBody: update.body,
+      updateBody: readPrivateText(update.bodyEncrypted, update.body) ?? "",
       projectId: update.projectId,
     });
     await prisma.projectUpdate.update({ where: { id: updateId }, data: { notificationStatus: "SENT", notificationError: null } });

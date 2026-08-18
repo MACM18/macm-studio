@@ -12,7 +12,9 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:validate": "prisma validate"
+    "db:validate": "prisma validate",
+    "data:key": "node scripts/generate-data-key.mjs",
+    "data:backfill": "node --experimental-strip-types scripts/backfill-encrypted-data.ts"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.6.29",

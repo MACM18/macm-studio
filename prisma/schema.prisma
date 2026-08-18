@@ -72,6 +72,8 @@ model User {
   image         String?
   company       String?
   phone         String?
+  companyEncrypted String?
+  phoneEncrypted   String?
   role          UserRole        @default(CLIENT)
   status        UserStatus      @default(ACTIVE)
   createdAt     DateTime        @default(now())
@@ -144,10 +146,14 @@ model Lead {
   name               String
   email              String
   phone              String?
+  phoneEncrypted     String?
   projectType        String
   budgetSummary      String?
+  budgetSummaryEncrypted String?
   notes              String?
+  notesEncrypted     String?
   scope              Json?
+  scopeEncrypted     String?
   status             LeadStatus     @default(PENDING)
   /// Legacy n8n delivery metadata retained for historical migration safety.
   webhookStatus      DeliveryStatus @default(NOT_ATTEMPTED)
@@ -185,6 +191,7 @@ model Project {
   id          String             @id @default(cuid())
   title       String
   summary     String?
+  summaryEncrypted String?
   status      ProjectStatus      @default(PLANNING)
   visibility  PortalVisibility   @default(DRAFT)
   startDate   DateTime?
@@ -232,7 +239,8 @@ model ProjectUpdate {
   projectId          String
   authorId           String
   title              String
-  body               String
+  body               String?
+  bodyEncrypted      String?
   status             UpdateStatus   @default(DRAFT)
   publishedAt        DateTime?
   notificationStatus DeliveryStatus @default(NOT_ATTEMPTED)
@@ -249,7 +257,8 @@ model ProjectLink {
   id        String   @id @default(cuid())
   projectId String
   label     String
-  url       String
+  url       String?
+  urlEncrypted String?
   sortOrder Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
