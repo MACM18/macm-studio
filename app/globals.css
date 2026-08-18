@@ -715,3 +715,16 @@ dd { margin: 7px 0 0; font-size: 12px; }
   .otp-slots { gap: 5px; }
   .otp-slots input { font-size: 20px; }
 }
+
+/* Sign-in uses the same square controls as the authenticated workspace. */
+.auth-card,
+.auth-card .auth-icon,
+.auth-card .auth-message,
+.auth-card .workspace-form input,
+.auth-card .workspace-form textarea,
+.auth-card .workspace-form select,
+.auth-card .otp-step,
+.auth-card .otp-step b,
+.auth-card .otp-slots input {
+  border-radius: 0;
+}
