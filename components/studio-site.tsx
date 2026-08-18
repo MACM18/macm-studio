@@ -30,17 +30,20 @@ import { usePricingCalculator } from "@/hooks/usePricingCalculator";
 import { ADDONS, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, TECH_STACKS, formatMoney } from "@/lib/pricing";
 import { FAQ_ITEMS } from "@/lib/seo";
 import { trackEvent } from "@/lib/analytics";
+import { useLanguage } from "@/components/language-provider";
+import { LanguageToggle } from "@/components/language-toggle";
+import { translate, type TranslationKey } from "@/lib/i18n";
 
 const formatMaintenanceMoney = (amount: number, currency: Currency) => formatMoney(amount, currency, currency === "USD" ? 2 : 0);
 
-const NAV_ITEMS = [
-  ["Services", "#services"],
-  ["Sample websites", "#work"],
-  ["Pricing", "#pricing-calculator"],
-  ["Process", "#process"],
-  ["FAQs", "#faq"],
-  ["Contact", "#contact"],
-] as const;
+const NAV_ITEMS: Array<[TranslationKey, string]> = [
+  ["nav.services", "#services"],
+  ["nav.work", "#work"],
+  ["nav.pricing", "#pricing-calculator"],
+  ["nav.process", "#process"],
+  ["nav.faq", "#faq"],
+  ["nav.contact", "#contact"],
+];
 
 const SERVICES = [
   {
@@ -267,9 +270,9 @@ function CurrencyToggle({ currency, setCurrency }: { currency: Currency; setCurr
   );
 }
 
-function SamplePreview({ project, state }: { project: SampleProject; state: SamplePreviewState }) {
+function SamplePreview({ project, state, checkingLabel, comingLabel, comingCopy }: { project: SampleProject; state: SamplePreviewState; checkingLabel: string; comingLabel: string; comingCopy: string }) {
   if (state === "checking") {
-    return <div className="sample-preview-checking"><span className="sample-preview-pulse" /><p>Checking {project.domain}…</p></div>;
+    return <div className="sample-preview-checking"><span className="sample-preview-pulse" /><p>{checkingLabel} {project.domain}…</p></div>;
   }
 
   if (state === "available") {
@@ -277,15 +280,23 @@ function SamplePreview({ project, state }: { project: SampleProject; state: Samp
   }
 
   return (
-    <div className="sample-coming-preview">
-      <span className="kicker">IN THE STUDIO</span>
+              <div className="sample-coming-preview">
+      <span className="kicker">{comingLabel}</span>
       <strong>{project.name}</strong>
-      <p>This subdomain is not live yet. Once it is deployed, the live preview will appear here automatically.</p>
+      <p>{comingCopy}</p>
     </div>
   );
 }
 
 export function StudioSite() {
+  const { locale, t } = useLanguage();
+  const heroEnglish = (key: TranslationKey) => translate("en", key);
+  const heroSinhala = (key: TranslationKey) => locale === "si" ? translate("si", key) : null;
+  const localizedFaqItems = FAQ_ITEMS.map((item, index) => ({
+    ...item,
+    question: t(`faq.${index + 1}.question` as TranslationKey),
+    answer: t(`faq.${index + 1}.answer` as TranslationKey),
+  }));
   const pricing = usePricingCalculator();
   const [menuOpen, setMenuOpen] = useState(false);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -438,9 +449,9 @@ export function StudioSite() {
         body: JSON.stringify(payload),
       });
       const result = (await response.json()) as { message?: string };
-      if (!response.ok) throw new Error(result.message || "Unable to send your enquiry.");
+      if (!response.ok) throw new Error(result.message || t("contact.error"));
       setStatus("sent");
-      setStatusMessage(result.message || "Your project brief has been sent.");
+      setStatusMessage(result.message || t("contact.sent"));
       trackEvent("lead_submitted", {
         project_type: String(form.get("projectType") || "unspecified"),
         currency: pricing.currency,
@@ -450,7 +461,7 @@ export function StudioSite() {
       if (summaryRef.current) summaryRef.current.value = pricing.scope.summary;
     } catch (error) {
       setStatus("error");
-      setStatusMessage(error instanceof Error ? error.message : "Unable to send your enquiry.");
+      setStatusMessage(error instanceof Error ? error.message : t("contact.error"));
       trackEvent("lead_submit_error");
     }
   };
@@ -459,30 +470,32 @@ export function StudioSite() {
     <div className="site-shell">
       <a href="#main" className="skip-link">Skip to content</a>
       <header className="nav-wrap">
-        <nav className="nav container" aria-label="Primary navigation">
+        <nav className="nav container" aria-label={t("nav.primary")}>
           <a className="brand" href="#main" aria-label="MACM home">
             <span>MACM</span><i />
           </a>
-          <div className="availability"><span /> Available for Q3/Q4 projects</div>
-          <div id="mobile-nav" className={`nav-links ${menuOpen ? "open" : ""}`} aria-label="Site navigation">
+          <div className="availability"><span /> {t("nav.available")}</div>
+          <div id="mobile-nav" className={`nav-links ${menuOpen ? "open" : ""}`} aria-label={t("nav.primary")}>
             {NAV_ITEMS.map(([label, href]) => (
-              <a key={href} href={href} onClick={() => setMenuOpen(false)}>{label}</a>
+              <a key={href} href={href} onClick={() => setMenuOpen(false)}>{t(label)}</a>
             ))}
             <div className="mobile-nav-controls">
               <CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} />
-              <button className="icon-button" type="button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme}>
+              <LanguageToggle compact />
+              <button className="icon-button" type="button" aria-label={theme === "dark" ? t("common.lightMode") : t("common.darkMode")} onClick={toggleTheme}>
                 {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
               </button>
-              <button className="button" type="button" onClick={() => handlePlanWebsiteClick("mobile_navigation")}>Plan my website <ArrowRight size={16} /></button>
+              <button className="button" type="button" onClick={() => handlePlanWebsiteClick("mobile_navigation")}>{t("nav.plan")} <ArrowRight size={16} /></button>
             </div>
           </div>
           <div className="nav-actions">
             <CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} />
-            <button className="icon-button" type="button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`} onClick={toggleTheme}>
+            <LanguageToggle compact />
+            <button className="icon-button" type="button" aria-label={theme === "dark" ? t("common.lightMode") : t("common.darkMode")} onClick={toggleTheme}>
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
-            <button className="button button-small desktop-cta" type="button" onClick={() => handlePlanWebsiteClick("desktop_navigation")}>Plan my website</button>
-            <button className="menu-button" type="button" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-controls="mobile-nav" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
+            <button className="button button-small desktop-cta" type="button" onClick={() => handlePlanWebsiteClick("desktop_navigation")}>{t("nav.plan")}</button>
+            <button className="menu-button" type="button" aria-label={menuOpen ? t("common.closeNav") : t("common.openNav")} aria-controls="mobile-nav" aria-expanded={menuOpen} onClick={() => setMenuOpen(!menuOpen)}>
               {menuOpen ? <X /> : <Menu />}
             </button>
           </div>
@@ -493,19 +506,19 @@ export function StudioSite() {
         <section className="hero section-grid">
           <div className="hero-grid-lines" aria-hidden="true" />
           <div className="container hero-inner">
-            <div className="eyebrow"><span>01 / WEB DEVELOPMENT STUDIO</span><span className="eyebrow-line" /></div>
-            <h1>Websites that<br /><em>work.</em><br />Built with care.</h1>
+            <div className="eyebrow"><span>{heroEnglish("hero.eyebrow")}</span>{heroSinhala("hero.overlay.eyebrow") && <span className="hero-translation">{heroSinhala("hero.overlay.eyebrow")}</span>}<span className="eyebrow-line" /></div>
+            <div className="hero-title-wrap"><h1>{heroEnglish("hero.title").split(". ").map((line, index) => <span key={line}>{line}{index < 2 ? "." : ""}{index < 2 && <br />}</span>)}</h1>{heroSinhala("hero.overlay.title") && <span className="hero-translation hero-title-translation">{heroSinhala("hero.overlay.title")}</span>}</div>
             <div className="hero-bottom">
-            <p className="hero-copy">MACM is a Sri Lanka-based web design and web development studio creating thoughtful websites and custom web applications for local businesses and remote teams.</p>
+            <div className="hero-copy-wrap"><p className="hero-copy">{heroEnglish("hero.copy")}</p>{heroSinhala("hero.overlay.copy") && <span className="hero-translation">{heroSinhala("hero.overlay.copy")}</span>}</div>
               <div className="hero-actions">
-                <button className="button" type="button" onClick={() => handlePlanWebsiteClick("hero")}>Plan my website <ArrowDown size={17} /></button>
-                <button className="text-link" type="button" onClick={() => scrollTo("#process")}>See our web development process <ArrowRight size={17} /></button>
+                <div className="hero-action-wrap"><button className="button" type="button" onClick={() => handlePlanWebsiteClick("hero")}>{heroEnglish("nav.plan")} <ArrowDown size={17} /></button>{heroSinhala("hero.overlay.plan") && <span className="hero-translation">{heroSinhala("hero.overlay.plan")}</span>}</div>
+                <div className="hero-action-wrap"><button className="text-link" type="button" onClick={() => scrollTo("#process")}>{heroEnglish("hero.process")} <ArrowRight size={17} /></button>{heroSinhala("hero.overlay.process") && <span className="hero-translation">{heroSinhala("hero.overlay.process")}</span>}</div>
               </div>
             </div>
-            <div className="metric-strip" aria-label="Project highlights">
-              <div><Globe2 /><span><strong>Websites first</strong> Clear, useful experiences</span></div>
-              <div><CircleDollarSign /><span><strong>10%</strong> to start</span></div>
-              <div><ServerCog /><span><strong>Right-sized</strong> VPS deployment</span></div>
+            <div className="metric-strip" aria-label={t("work.copy")}>
+              <div><Globe2 /><span><strong>{heroEnglish("hero.websites")}</strong> {heroEnglish("hero.websitesDetail")}{heroSinhala("hero.overlay.websites") && <small className="hero-translation">{heroSinhala("hero.overlay.websites")}</small>}</span></div>
+              <div><CircleDollarSign /><span><strong>10%</strong> {heroEnglish("hero.start")}{heroSinhala("hero.overlay.start") && <small className="hero-translation">{heroSinhala("hero.overlay.start")}</small>}</span></div>
+              <div><ServerCog /><span><strong>{heroEnglish("hero.rightSized")}</strong> {heroEnglish("hero.vps")}{heroSinhala("hero.overlay.vps") && <small className="hero-translation">{heroSinhala("hero.overlay.vps")}</small>}</span></div>
             </div>
           </div>
         </section>
@@ -513,14 +526,14 @@ export function StudioSite() {
         <section className="section" id="services">
           <div className="container">
             <div className="section-heading">
-              <div><span className="kicker">WHAT WE BUILD</span><h2>Small studio.<br />Useful websites.</h2></div>
-              <p>From a first business website to the online tools behind your operations, every engagement starts with a clear goal and removes everything unnecessary.</p>
+              <div><span className="kicker">{t("services.kicker")}</span><h2>{t("services.title")}</h2></div>
+              <p>{t("services.copy")}</p>
             </div>
             <div className="services-grid">
-              {SERVICES.map(({ index, icon: Icon, title, copy, tech }) => (
-                <article className="service-card" key={title}>
+              {SERVICES.map(({ index, icon: Icon }, serviceIndex) => (
+                <article className="service-card" key={index}>
                   <div className="card-top"><span>{index}</span><Icon size={22} /></div>
-                  <h3>{title}</h3><p>{copy}</p><div className="tech-line">{tech}</div>
+                  <h3>{t(`service.${serviceIndex + 1}.title` as TranslationKey)}</h3><p>{t(`service.${serviceIndex + 1}.copy` as TranslationKey)}</p><div className="tech-line">{t(`service.${serviceIndex + 1}.tech` as TranslationKey)}</div>
                 </article>
               ))}
             </div>
@@ -529,11 +542,11 @@ export function StudioSite() {
 
         <section className="work-section" id="standards">
           <div className="container work-grid">
-            <div><span className="kicker">THE STANDARD</span><h2>Clear for customers.<br />Ready for ownership.</h2></div>
+            <div><span className="kicker">{t("standards.kicker")}</span><h2>{t("standards.title")}</h2></div>
             <div className="principles">
-              <div><Zap /><span><strong>Thoughtful foundations</strong>Clear interfaces, sensible loading, dependable infrastructure.</span></div>
-              <div><ShieldCheck /><span><strong>Built for ownership</strong>Clean handover, documented systems, no platform lock-in.</span></div>
-              <div><Sparkles /><span><strong>Useful by design</strong>Every screen and workflow earns its place.</span></div>
+              <div><Zap /><span><strong>{t("standards.one")}</strong>{t("standards.oneCopy")}</span></div>
+              <div><ShieldCheck /><span><strong>{t("standards.two")}</strong>{t("standards.twoCopy")}</span></div>
+              <div><Sparkles /><span><strong>{t("standards.three")}</strong>{t("standards.threeCopy")}</span></div>
             </div>
           </div>
         </section>
@@ -541,8 +554,8 @@ export function StudioSite() {
         <section className="section showcase-section" id="work">
           <div className="container">
             <div className="section-heading showcase-heading">
-              <div><span className="kicker">SELECTED DIRECTIONS</span><h2>Websites for<br />different worlds.</h2></div>
-              <p>Explore website design examples for restaurants, professional services, hospitality, creative studios, clinics, property, SaaS, commerce, education, and events.</p>
+              <div><span className="kicker">{t("work.kicker")}</span><h2>{t("work.title")}</h2></div>
+              <p>{t("work.copy")}</p>
             </div>
             <div className="sample-grid">
               {SAMPLE_PROJECTS.map((project) => {
@@ -557,7 +570,7 @@ export function StudioSite() {
                     setSelectedSample(project);
                     trackEvent("sample_preview_open", { project: project.id, category: project.category });
                   }}
-                  aria-label={`Open ${project.name} sample project preview`}
+                  aria-label={`${t("work.open")} ${project.name}`}
                 >
                   <span className="sample-card-preview" aria-hidden="true">
                     <span className="sample-mini-browser">
@@ -566,33 +579,33 @@ export function StudioSite() {
                         <span className="sample-mini-kicker">{project.previewLabel}</span>
                         <strong>{project.name}</strong>
                         <span className="sample-mini-lines"><i /><i /><i /></span>
-                        <span className="sample-mini-pills"><i>{project.category}</i><i>{projectStatus === "available" ? "LIVE" : projectStatus === "checking" ? "CHECKING" : "SOON"}</i></span>
+                        <span className="sample-mini-pills"><i>{project.category}</i><i>{projectStatus === "available" ? t("work.live") : projectStatus === "checking" ? t("work.checking") : t("work.soon")}</i></span>
                       </span>
                     </span>
                   </span>
                   <span className="sample-card-info">
-                    <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={projectStatus === "available" ? "sample-status live" : "sample-status"}>{projectStatus === "available" ? "LIVE SAMPLE" : projectStatus === "checking" ? "CHECKING" : "COMING SOON"}</span></span>
+                    <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={projectStatus === "available" ? "sample-status live" : "sample-status"}>{projectStatus === "available" ? t("work.live") : projectStatus === "checking" ? t("work.checking") : t("work.soon")}</span></span>
                     <strong>{project.name}</strong>
                     <span>{projectDescription}</span>
-                    <span className="sample-card-open">Open preview <ArrowRight size={15} /></span>
+                    <span className="sample-card-open">{t("work.open")} <ArrowRight size={15} /></span>
                   </span>
                 </button>;
               })}
             </div>
-            <p className="showcase-footnote"><span /> New samples will appear here as they go live on their own subdomain.</p>
+            <p className="showcase-footnote"><span /> {locale === "si" ? "අලුත් samples ඒවායේ subdomain එක live වූ විට මෙහි පෙන්වයි." : "New samples will appear here as they go live on their own subdomain."}</p>
           </div>
         </section>
 
         <section className="section calculator-section" id="pricing-calculator">
           <div className="container">
             <div className="section-heading calculator-heading">
-              <div><span className="kicker">WEBSITE PRICING</span><h2>A clear estimate,<br />before the first call.</h2></div>
-              <div><p>Plan a website, web application, domain, email setup, and optional maintenance with a transparent starting estimate.</p><CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} /></div>
+              <div><span className="kicker">{t("pricing.kicker")}</span><h2>{t("pricing.title")}</h2></div>
+              <div><p>{t("pricing.copy")}</p><CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} /></div>
             </div>
             <div className="calculator-layout">
               <div className="calculator-controls">
                 <fieldset className="choice-group">
-                  <legend><span>01</span> Choose the foundation</legend>
+                  <legend><span>01</span> {t("pricing.foundation")}</legend>
                   <div className="stack-list">
                     {TECH_STACKS.map((stack) => {
                       const selected = pricing.stackId === stack.id;
@@ -609,7 +622,7 @@ export function StudioSite() {
                 </fieldset>
 
                 <fieldset className="choice-group">
-                  <legend><span>02</span> Add the capabilities</legend>
+                  <legend><span>02</span> {t("pricing.capabilities")}</legend>
                   <div className="addon-grid">
                     {ADDONS.map((addon) => {
                       const selected = pricing.addonIds.includes(addon.id);
@@ -632,7 +645,7 @@ export function StudioSite() {
                 </fieldset>
 
                 <fieldset className="choice-group inbox-group">
-                  <legend><span>03</span> Set up business email</legend>
+                  <legend><span>03</span> {t("pricing.email")}</legend>
                   <div className="inbox-panel">
                     <div className="included-inbox"><Mail /><span><strong>1 custom inbox included</strong><small>name@yourdomain.lk · Roundcube · SPF, DKIM & DMARC</small></span><i>FREE</i></div>
                     <div className="stepper-row">
@@ -647,18 +660,18 @@ export function StudioSite() {
                 </fieldset>
               </div>
 
-              <aside className="estimate-card" aria-label="Live project estimate">
-                <div className="estimate-top"><span>LIVE ESTIMATE</span><i><span /> Updating</i></div>
-                <p>Estimated investment</p>
+              <aside className="estimate-card" aria-label={t("pricing.estimateAria")}>
+                <div className="estimate-top"><span>{t("pricing.liveEstimate")}</span><i><span /> {t("pricing.updating")}</i></div>
+                <p>{t("pricing.investment")}</p>
                 <h3>{formatMoney(pricing.scope.total, pricing.currency)}</h3>
                 <div className="estimate-meta"><span>{pricing.scope.stack.shortName}</span><span>{pricing.scope.stack.delivery}</span></div>
                 <div className="scope-summary">
-                  <div><span>Foundation</span><strong>{formatMoney(pricing.scope.stack.price[pricing.currency], pricing.currency)}</strong></div>
-                  <div><span>Selected add-ons</span><strong>{pricing.scope.addons.length + (pricing.fastTrack ? 1 : 0)}</strong></div>
-                  <div><span>Business inboxes</span><strong>{pricing.extraInboxes + 1}</strong></div>
+                  <div><span>{t("pricing.foundationLabel")}</span><strong>{formatMoney(pricing.scope.stack.price[pricing.currency], pricing.currency)}</strong></div>
+                  <div><span>{t("pricing.addons")}</span><strong>{pricing.scope.addons.length + (pricing.fastTrack ? 1 : 0)}</strong></div>
+                  <div><span>{t("pricing.inboxes")}</span><strong>{pricing.extraInboxes + 1}</strong></div>
                 </div>
                 <div className="milestones">
-                  <div className="milestone-title"><span>Payment milestones</span><small>10 / 50 / 40</small></div>
+                  <div className="milestone-title"><span>{t("pricing.payment")}</span><small>10 / 50 / 40</small></div>
                   <div className="milestone">
                     <span className="milestone-dot">01</span><div><strong>Kickoff</strong><small>Scope & architecture lock</small></div><b>{formatMoney(pricing.scope.milestones.kickoff, pricing.currency)}</b>
                   </div>
@@ -669,21 +682,21 @@ export function StudioSite() {
                     <span className="milestone-dot">03</span><div><strong>Final handover</strong><small>Production launch & transfer</small></div><b>{formatMoney(pricing.scope.milestones.handover, pricing.currency)}</b>
                   </div>
                 </div>
-                <button className="button lock-button" type="button" onClick={lockScope}>{scopeLocked ? "Scope added to enquiry" : "Lock in this scope"}<ArrowRight size={17} /></button>
-                <small className="estimate-note">Planning estimate only. Final scope is confirmed after a short discovery call.</small>
+                <button className="button lock-button" type="button" onClick={lockScope}>{scopeLocked ? t("pricing.locked") : t("pricing.lock")}<ArrowRight size={17} /></button>
+                <small className="estimate-note">{t("pricing.estimateNote")}</small>
               </aside>
             </div>
             <div className="maintenance-panel">
               <div className="maintenance-heading">
                 <div>
-                  <span className="kicker">OPTIONAL ONGOING CARE</span>
-                  <h3>Keep your website looked after.</h3>
-                  <p>Choose simple website care after development is complete and your website has been handed over. {MAINTENANCE_CARE.domainRenewal}.</p>
+                  <span className="kicker">{t("pricing.maintenanceKicker")}</span>
+                  <h3>{t("pricing.maintenanceTitle")}</h3>
+                  <p>{t("pricing.maintenanceAfter")} {t("pricing.domainRenewal")}.</p>
                 </div>
-                <div className="maintenance-billing" role="group" aria-label="Maintenance billing period">
+                <div className="maintenance-billing" role="group" aria-label={t("pricing.billingPeriod")}>
                   {(["monthly", "yearly"] as const).map((billing) => (
                     <button key={billing} type="button" className={pricing.maintenanceBilling === billing ? "active" : ""} aria-pressed={pricing.maintenanceBilling === billing} onClick={() => pricing.setMaintenanceBilling(billing)}>
-                      {billing === "monthly" ? "Monthly" : "Yearly · 2 months free"}
+                      {billing === "monthly" ? t("pricing.monthly") : t("pricing.yearly")}
                     </button>
                   ))}
                 </div>
@@ -699,21 +712,21 @@ export function StudioSite() {
                     trackEvent("maintenance_plan_selected", { plan, billing: pricing.maintenanceBilling });
                   }}
                 >
-                  <span className="maintenance-card-top"><span>RECOMMENDED</span><i>{pricing.maintenancePlan === "care" ? "SELECTED" : "OPTIONAL"}</i></span>
+                  <span className="maintenance-card-top"><span>{t("pricing.recommended")}</span><i>{pricing.maintenancePlan === "care" ? t("pricing.selected") : t("pricing.optional")}</i></span>
                   <strong>{MAINTENANCE_CARE.name}</strong>
-                  <span className="maintenance-price">{formatMaintenanceMoney(MAINTENANCE_CARE[pricing.maintenanceBilling === "monthly" ? "monthlyPrice" : "yearlyPrice"][pricing.currency], pricing.currency)}<small>/{pricing.maintenanceBilling === "monthly" ? "month" : "year"}</small></span>
-                  <span className="maintenance-card-copy">Keep the essentials in order while you focus on running the business.</span>
-                  <ul>{MAINTENANCE_CARE.inclusions.map((inclusion) => <li key={inclusion}><Check size={14} />{inclusion}</li>)}</ul>
+                  <span className="maintenance-price">{formatMaintenanceMoney(MAINTENANCE_CARE[pricing.maintenanceBilling === "monthly" ? "monthlyPrice" : "yearlyPrice"][pricing.currency], pricing.currency)}<small>/{pricing.maintenanceBilling === "monthly" ? t("pricing.monthShort") : t("pricing.yearShort")}</small></span>
+                  <span className="maintenance-card-copy">{t("pricing.careCopy")}</span>
+                  <ul>{MAINTENANCE_CARE.inclusions.map((inclusion, index) => <li key={inclusion}><Check size={14} />{t(`pricing.inclusion.${index + 1}` as TranslationKey)}</li>)}</ul>
                 </button>
                 <label className={`maintenance-priority ${pricing.maintenancePriority ? "selected" : ""} ${pricing.maintenancePlan !== "care" ? "disabled" : ""}`}>
                   <input type="checkbox" checked={pricing.maintenancePriority} disabled={pricing.maintenancePlan !== "care"} onChange={() => { pricing.toggleMaintenancePriority(); trackEvent("maintenance_priority_changed", { enabled: !pricing.maintenancePriority }); }} />
                   <span className="check-mark">{pricing.maintenancePriority && <Check size={13} />}</span>
-                  <span className="maintenance-priority-copy"><strong>{MAINTENANCE_PRIORITY.name}</strong><small>+{formatMaintenanceMoney(MAINTENANCE_PRIORITY[pricing.maintenanceBilling === "monthly" ? "monthlyPrice" : "yearlyPrice"][pricing.currency], pricing.currency)} / {pricing.maintenanceBilling === "monthly" ? "month" : "year"}</small><p>{MAINTENANCE_PRIORITY.detail}</p><i>Complex requests are scoped and scheduled separately.</i></span>
+                  <span className="maintenance-priority-copy"><strong>{MAINTENANCE_PRIORITY.name}</strong><small>+{formatMaintenanceMoney(MAINTENANCE_PRIORITY[pricing.maintenanceBilling === "monthly" ? "monthlyPrice" : "yearlyPrice"][pricing.currency], pricing.currency)} / {pricing.maintenanceBilling === "monthly" ? t("pricing.monthShort") : t("pricing.yearShort")}</small><p>{t("pricing.priorityDetail")}</p><i>{t("pricing.prioritySeparate")}</i></span>
                 </label>
               </div>
               <div className="maintenance-footnote">
-                <span>{pricing.maintenancePlan === "care" ? `Recurring care: ${formatMaintenanceMoney(pricing.scope.maintenance.selectedPrice, pricing.currency)} / ${pricing.maintenanceBilling === "monthly" ? "month" : "year"}` : "No recurring plan selected"}</span>
-                <small>New pages, redesigns, major changes, server work, premium domains, and third-party fees are quoted separately.</small>
+                <span>{pricing.maintenancePlan === "care" ? `${t("pricing.recurring")}: ${formatMaintenanceMoney(pricing.scope.maintenance.selectedPrice, pricing.currency)} / ${pricing.maintenanceBilling === "monthly" ? "month" : "year"}` : t("pricing.none")}</span>
+                <small>{t("pricing.separate")}</small>
               </div>
             </div>
           </div>
@@ -721,12 +734,12 @@ export function StudioSite() {
 
         <section className="section process-section" id="process">
           <div className="container">
-            <div className="section-heading"><div><span className="kicker">HOW WE DELIVER</span><h2>Four steps.<br />No black boxes.</h2></div><p>Clear gates keep the project predictable. You see a working website or web app early and only pay the next milestone when it is earned.</p></div>
+            <div className="section-heading"><div><span className="kicker">{t("process.kicker")}</span><h2>{t("process.title")}</h2></div><p>{t("process.copy")}</p></div>
             <div className="process-grid">
               {PROCESS.map((step, index) => (
                 <article className="process-card" key={step.no}>
                   <div className="process-no"><span>{step.no}</span>{index < PROCESS.length - 1 && <ChevronRight />}</div>
-                  <span className="process-tag">{step.tag}</span><h3>{step.title}</h3><p>{step.copy}</p>
+                  <span className="process-tag">{step.tag}</span><h3>{t(`process.${index === 0 ? "one" : index === 1 ? "two" : index === 2 ? "three" : "four"}` as TranslationKey)}</h3><p>{t(`process.${index === 0 ? "oneCopy" : index === 1 ? "twoCopy" : index === 2 ? "threeCopy" : "fourCopy"}` as TranslationKey)}</p>
                 </article>
               ))}
             </div>
@@ -736,11 +749,11 @@ export function StudioSite() {
         <section className="section faq-section" id="faq">
           <div className="container faq-layout">
             <div className="section-heading faq-heading">
-              <div><span className="kicker">COMMON QUESTIONS</span><h2>Useful answers<br />before we talk.</h2></div>
-              <p>Clear answers for businesses planning a website, web application, or a better way to manage their online presence.</p>
+              <div><span className="kicker">{t("faq.kicker")}</span><h2>{t("faq.title")}</h2></div>
+              <p>{t("faq.copy")}</p>
             </div>
             <div className="faq-list">
-              {FAQ_ITEMS.map((item) => (
+              {localizedFaqItems.map((item) => (
                 <details className="faq-item" key={item.question} onToggle={(event) => { if (event.currentTarget.open) trackEvent("faq_opened", { question: item.question }); }}>
                   <summary><span>{item.question}</span><Plus size={18} /></summary>
                   <p>{item.answer}</p>
@@ -753,27 +766,27 @@ export function StudioSite() {
         <section className="contact-section" id="contact">
           <div className="container contact-grid">
             <div className="contact-copy">
-              <span className="kicker">START A CONVERSATION</span>
-              <h2>Bring us the<br />hard problem.</h2>
-              <p>Tell us what you are building and where you are stuck. We work with Sri Lankan businesses and remote teams, and reply with practical next steps.</p>
-              <div className="contact-points"><span><CheckCircle2 /> Direct access to the engineer</span><span><CheckCircle2 /> Clear scope before commitment</span><span><CheckCircle2 /> Your code, infrastructure, and data</span></div>
+              <span className="kicker">{t("contact.kicker")}</span>
+              <h2>{t("contact.title")}</h2>
+              <p>{t("contact.copy")}</p>
+              <div className="contact-points"><span><CheckCircle2 /> {t("contact.direct")}</span><span><CheckCircle2 /> {t("contact.scope")}</span><span><CheckCircle2 /> {t("contact.ownership")}</span></div>
               <a href="mailto:hello@macm.lk" onClick={() => trackEvent("email_contact_click", { location: "contact" })}>hello@macm.lk <ArrowRight /></a>
             </div>
             <form className="lead-form" onSubmit={submitLead} onFocus={() => { if (!leadStartedRef.current) { leadStartedRef.current = true; trackEvent("lead_form_started"); } }}>
               <input className="honeypot" tabIndex={-1} autoComplete="off" name="website" aria-hidden="true" />
               <div className="field-row">
-                <label><span>Your name *</span><input name="name" required maxLength={120} placeholder="How should we address you?" /></label>
-                <label><span>Work email *</span><input type="email" name="email" required maxLength={254} placeholder="you@company.com" /></label>
+                <label><span>{t("contact.name")}</span><input name="name" required maxLength={120} placeholder={t("contact.namePlaceholder")} /></label>
+                <label><span>{t("contact.email")}</span><input type="email" name="email" required maxLength={254} placeholder={t("contact.emailPlaceholder")} /></label>
               </div>
               <div className="field-row">
-                <label><span>WhatsApp / phone</span><input name="phone" maxLength={40} placeholder="+94 7X XXX XXXX" /></label>
-                <label><span>Project type *</span><select name="projectType" required defaultValue={scopeLocked ? pricing.scope.stack.name : ""} key={`${scopeLocked}-${pricing.scope.stack.id}`}><option value="" disabled>Select a project type</option>{TECH_STACKS.map((stack) => <option value={stack.name} key={stack.id}>{stack.name}</option>)}</select></label>
+                <label><span>{t("contact.phone")}</span><input name="phone" maxLength={40} placeholder={t("contact.phonePlaceholder")} /></label>
+                <label><span>{t("contact.projectType")}</span><select name="projectType" required defaultValue={scopeLocked ? pricing.scope.stack.name : ""} key={`${scopeLocked}-${pricing.scope.stack.id}`}><option value="" disabled>{t("contact.selectProject")}</option>{TECH_STACKS.map((stack) => <option value={stack.name} key={stack.id}>{stack.name}</option>)}</select></label>
               </div>
-              <label><span>Estimate & milestones</span><textarea ref={summaryRef} name="budgetSummary" rows={6} readOnly value={scopeLocked ? pricing.scope.summary : "Use the project calculator above, then select ‘Lock in this scope’ to add your estimate here."} onChange={() => undefined} /></label>
-              <label><span>What do you need this product to achieve?</span><textarea name="notes" rows={5} maxLength={4000} placeholder="A little context about the business, users, timeline, and the problem you want to solve..." /></label>
+              <label><span>{t("contact.estimate")}</span><textarea ref={summaryRef} name="budgetSummary" rows={6} readOnly value={scopeLocked ? pricing.scope.summary : t("contact.lockHint")} onChange={() => undefined} /></label>
+              <label><span>{t("contact.notes")}</span><textarea name="notes" rows={5} maxLength={4000} placeholder={t("contact.notesPlaceholder")} /></label>
               <div className="form-footer">
-                <small>By sending this form, you agree to be contacted about this project. No mailing lists.</small>
-                <button className="button" type="submit" disabled={status === "sending"}>{status === "sending" ? "Sending…" : "Send project brief"}<Send size={16} /></button>
+                <small>{t("contact.sendConsent")}</small>
+                <button className="button" type="submit" disabled={status === "sending"}>{status === "sending" ? t("contact.sending") : t("contact.send")}<Send size={16} /></button>
               </div>
               {statusMessage && <div className={`form-status ${status}`} role="status">{statusMessage}</div>}
             </form>
@@ -784,23 +797,23 @@ export function StudioSite() {
       {selectedSample && (
         <div className="sample-modal-backdrop" role="presentation" onMouseDown={() => setSelectedSample(null)}>
           <div className="sample-modal" role="dialog" aria-modal="true" aria-labelledby="sample-modal-title" onMouseDown={(event) => event.stopPropagation()}>
-            <div className={`sample-modal-preview sample-theme-${selectedSample.theme}`}>
-              <div className="sample-modal-toolbar"><span className="sample-mini-dots"><i /><i /><i /></span><span>{selectedSample.domain}</span><span className={selectedSampleStatus === "available" ? "sample-status live" : "sample-status"}>{selectedSampleStatus === "available" ? "LIVE SAMPLE" : selectedSampleStatus === "checking" ? "CHECKING" : "COMING SOON"}</span></div>
-              <SamplePreview project={selectedSample} state={selectedSampleStatus} />
+              <div className={`sample-modal-preview sample-theme-${selectedSample.theme}`}>
+              <div className="sample-modal-toolbar"><span className="sample-mini-dots"><i /><i /><i /></span><span>{selectedSample.domain}</span><span className={selectedSampleStatus === "available" ? "sample-status live" : "sample-status"}>{selectedSampleStatus === "available" ? t("work.live") : selectedSampleStatus === "checking" ? t("work.checking") : t("work.soon")}</span></div>
+              <SamplePreview project={selectedSample} state={selectedSampleStatus} checkingLabel={t("work.checkLive")} comingLabel={t("work.inStudio")} comingCopy={t("work.notLive")} />
             </div>
             <div className="sample-modal-details">
-              <button className="sample-modal-close" type="button" aria-label="Close sample preview" onClick={() => setSelectedSample(null)}><X size={18} /></button>
+              <button className="sample-modal-close" type="button" aria-label={t("common.close")} onClick={() => setSelectedSample(null)}><X size={18} /></button>
               <span className="kicker">{selectedSample.number} / {selectedSample.category}</span>
               <h2 id="sample-modal-title">{selectedSample.name}</h2>
               <p className="sample-modal-domain">{selectedSample.domain}</p>
               <p>{selectedSampleLiveData?.description || selectedSample.description}</p>
-              <div className="sample-highlights"><span>Inside the concept</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}><Check size={14} />{highlight}</li>)}</ul></div>
+              <div className="sample-highlights"><span>{t("work.inside")}</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}><Check size={14} />{highlight}</li>)}</ul></div>
               {selectedSampleStatus === "available" ? (
-                <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer" onClick={() => trackEvent("sample_live_site_click", { project: selectedSample.id })}>Open live site <ExternalLink size={15} /></a>
+                <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer" onClick={() => trackEvent("sample_live_site_click", { project: selectedSample.id })}>{t("work.openLive")} <ExternalLink size={15} /></a>
               ) : selectedSampleStatus === "checking" ? (
-                <span className="sample-coming-note">Checking live sample</span>
+                <span className="sample-coming-note">{t("work.checkLive")}</span>
               ) : (
-                <span className="sample-coming-note">Live preview coming soon</span>
+                <span className="sample-coming-note">{t("work.previewSoon")}</span>
               )}
             </div>
           </div>
@@ -809,10 +822,10 @@ export function StudioSite() {
 
       <footer>
         <div className="container footer-grid">
-          <div><a className="brand" href="#main"><span>MACM</span><i /></a><p>Websites and web development, built with care in Sri Lanka.</p></div>
-          <div><span>LOCAL TIME</span><strong>UTC +05:30 · Colombo</strong></div>
-          <div><span>CONTACT</span><a href="mailto:hello@macm.lk" onClick={() => trackEvent("email_contact_click", { location: "footer" })}>hello@macm.lk</a><a href="/sign-in" onClick={() => trackEvent("client_portal_click", { location: "footer" })}>Client sign in</a></div>
-          <div><span>© {new Date().getFullYear()} MACM</span><button type="button" onClick={() => scrollTo("#main")}>Back to top ↑</button></div>
+          <div><a className="brand" href="#main"><span>MACM</span><i /></a><p>{t("footer.websites")}</p></div>
+          <div><span>{t("footer.localTime")}</span><strong>UTC +05:30 · Colombo</strong></div>
+          <div><span>{t("footer.contact")}</span><a href="mailto:hello@macm.lk" onClick={() => trackEvent("email_contact_click", { location: "footer" })}>hello@macm.lk</a><a href="/sign-in" onClick={() => trackEvent("client_portal_click", { location: "footer" })}>{t("footer.signIn")}</a></div>
+          <div><span>© {new Date().getFullYear()} MACM</span><button type="button" onClick={() => scrollTo("#main")}>{t("footer.backTop")}</button></div>
         </div>
       </footer>
     </div>

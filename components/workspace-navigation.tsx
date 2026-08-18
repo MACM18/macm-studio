@@ -17,7 +17,7 @@ const icons: Record<WorkspaceNavIcon, typeof LayoutDashboard> = {
   meeting: ClipboardList,
 };
 
-export function WorkspaceNavigation({ eyebrow, nav }: { eyebrow: string; nav: WorkspaceNavItem[] }) {
+export function WorkspaceNavigation({ eyebrow, nav, heading = "Workspace", openLabel = "Menu", closeLabel = "Close" }: { eyebrow: string; nav: WorkspaceNavItem[]; heading?: string; openLabel?: string; closeLabel?: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
 
@@ -35,12 +35,12 @@ export function WorkspaceNavigation({ eyebrow, nav }: { eyebrow: string; nav: Wo
 
   return (
     <div className="workspace-navigation">
-      <button className="workspace-nav-toggle" type="button" aria-expanded={open} aria-controls="workspace-nav-panel" aria-label={open ? "Close workspace navigation" : "Open workspace navigation"} onClick={() => setOpen((value) => !value)}>
-        {open ? <X size={18} /> : <Menu size={18} />}<span>{open ? "Close" : "Menu"}</span>
+      <button className="workspace-nav-toggle" type="button" aria-expanded={open} aria-controls="workspace-nav-panel" aria-label={open ? `${closeLabel} ${heading}` : `${openLabel} ${heading}`} onClick={() => setOpen((value) => !value)}>
+        {open ? <X size={18} /> : <Menu size={18} />}<span>{open ? closeLabel : openLabel}</span>
       </button>
-      <button className={`workspace-nav-backdrop${open ? " is-visible" : ""}`} type="button" aria-label="Close workspace navigation" onClick={() => setOpen(false)} />
+      <button className={`workspace-nav-backdrop${open ? " is-visible" : ""}`} type="button" aria-label={`${closeLabel} ${heading}`} onClick={() => setOpen(false)} />
       <div id="workspace-nav-panel" className={`workspace-nav-panel${open ? " is-open" : ""}`}>
-        <div className="workspace-nav-heading"><span>Workspace</span><Activity size={14} /></div>
+        <div className="workspace-nav-heading"><span>{heading}</span><Activity size={14} /></div>
         <nav aria-label={`${eyebrow} navigation`} className="workspace-nav-list">
           {nav.map((item) => {
             const Icon = icons[item.icon];

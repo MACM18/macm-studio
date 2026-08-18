@@ -3,12 +3,14 @@
 import { FormEvent, ClipboardEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, KeyRound, Mail, RefreshCw } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { useLanguage } from "@/components/language-provider";
 
 const OTP_LENGTH = 6;
 const OTP_LIFETIME_SECONDS = 20 * 60;
 const RESEND_COOLDOWN_SECONDS = 30;
 
 export function SignInForm({ destination }: { destination: string }) {
+  const { t } = useLanguage();
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
@@ -41,10 +43,10 @@ export function SignInForm({ destination }: { destination: string }) {
       setSecondsRemaining(OTP_LIFETIME_SECONDS);
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
       setStep("otp");
-      setMessage("If this email has access, a six-digit code is on its way.");
+      setMessage(t("signin.emailCopy"));
       window.setTimeout(() => inputRefs.current[0]?.focus(), 0);
     } catch {
-      setMessage("We could not request a code. Please try again shortly.");
+      setMessage(t("signin.emailCopy"));
     } finally {
       setBusy(false);
     }
@@ -55,7 +57,7 @@ export function SignInForm({ destination }: { destination: string }) {
   const verify = async (event: FormEvent) => {
     event.preventDefault();
     if (secondsRemaining <= 0) {
-      setMessage("This code has expired. Request a fresh code to continue.");
+      setMessage(t("signin.expired"));
       return;
     }
     setBusy(true);
@@ -63,14 +65,14 @@ export function SignInForm({ destination }: { destination: string }) {
     try {
       const result = await authClient.signIn.emailOtp({ email, otp: code });
       if (result.error) {
-        setMessage("That code is invalid or expired. Check it, or request a new one.");
+        setMessage(t("signin.expired"));
         setDigits(Array(OTP_LENGTH).fill(""));
         inputRefs.current[0]?.focus();
         return;
       }
       window.location.assign(destination);
     } catch {
-      setMessage("We could not verify that code. Please try again.");
+      setMessage(t("signin.expired"));
     } finally {
       setBusy(false);
     }
@@ -117,28 +119,28 @@ export function SignInForm({ destination }: { destination: string }) {
   return (
     <div className="auth-card">
       <div className="auth-icon">{step === "email" ? <Mail size={22} /> : <KeyRound size={22} />}</div>
-      <span className="kicker">SECURE CLIENT ACCESS</span>
-      <div className="otp-stepper" aria-label="Sign-in steps"><span className={`otp-step${step === "email" ? " is-active" : ""}`}><b>1</b> Email</span><span className={`otp-step${step === "otp" ? " is-active" : ""}`}><b>2</b> Secure code</span></div>
-      <h1>{step === "email" ? "Open your project workspace." : "Enter your sign-in code."}</h1>
-      <p>{step === "email" ? "Use the email address approved for your MACM project. No password is needed." : `We sent a short-lived code to ${email}.`}</p>
+      <span className="kicker">{t("signin.kicker")}</span>
+      <div className="otp-stepper" aria-label={t("signin.steps")}><span className={`otp-step${step === "email" ? " is-active" : ""}`}><b>1</b> {t("signin.emailStep")}</span><span className={`otp-step${step === "otp" ? " is-active" : ""}`}><b>2</b> {t("signin.codeStep")}</span></div>
+      <h1>{step === "email" ? t("signin.emailTitle") : t("signin.otpTitle")}</h1>
+      <p>{step === "email" ? t("signin.emailCopy") : `${t("signin.otpCopy")} ${email}.`}</p>
       {step === "email" ? (
         <form onSubmit={handleRequest} className="workspace-form">
-          <label>Email address<input type="email" name="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-          <button className="button" disabled={busy}>{busy ? "Requesting…" : <>Send secure code <ArrowRight size={16} /></>}</button>
+          <label>{t("signin.emailLabel")}<input type="email" name="email" required autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+          <button className="button" disabled={busy}>{busy ? t("signin.requesting") : <>{t("signin.sendCode")} <ArrowRight size={16} /></>}</button>
         </form>
       ) : (
         <form onSubmit={verify} className="workspace-form">
-          <label>Six-digit code</label>
-          <div className="otp-slots" role="group" aria-label="Six-digit sign-in code">
+          <label>{t("signin.codeLabel")}</label>
+          <div className="otp-slots" role="group" aria-label={t("signin.codeAria")}>
             {digits.map((digit, index) => <input key={index} ref={(element) => { inputRefs.current[index] = element; }} aria-label={`Code digit ${index + 1} of ${OTP_LENGTH}`} autoComplete={index === 0 ? "one-time-code" : "off"} inputMode="numeric" pattern="[0-9]*" maxLength={OTP_LENGTH} value={digit} onChange={(event) => handleInput(index, event.target.value)} onPaste={(event) => handlePaste(event, index)} onKeyDown={(event) => handleKeyDown(event, index)} />)}
           </div>
-          <div className="otp-expiry"><span>{secondsRemaining > 0 ? <>Code expires in <strong>{minutes}:{seconds}</strong></> : <strong>Code expired</strong>}</span><span>One use only</span></div>
-          <button className="button" disabled={busy || code.length !== OTP_LENGTH || secondsRemaining <= 0}>{busy ? "Checking…" : <>Sign in <ArrowRight size={16} /></>}</button>
-          <div className="otp-actions"><button className="text-button" type="button" disabled={busy || resendCooldown > 0} onClick={() => void requestCode()}><RefreshCw size={14} /> {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}</button><button className="auth-back" type="button" onClick={() => { setStep("email"); setDigits(Array(OTP_LENGTH).fill("")); setMessage(""); }}><ArrowLeft size={15} /> Use another email</button></div>
+          <div className="otp-expiry"><span>{secondsRemaining > 0 ? <>{t("signin.expires")} <strong>{minutes}:{seconds}</strong></> : <strong>{t("signin.expired")}</strong>}</span><span>{t("signin.oneUse")}</span></div>
+          <button className="button" disabled={busy || code.length !== OTP_LENGTH || secondsRemaining <= 0}>{busy ? t("signin.checking") : <>{t("signin.signIn")} <ArrowRight size={16} /></>}</button>
+          <div className="otp-actions"><button className="text-button" type="button" disabled={busy || resendCooldown > 0} onClick={() => void requestCode()}><RefreshCw size={14} /> {resendCooldown > 0 ? `${t("signin.resend")} ${resendCooldown}s` : t("signin.resend")}</button><button className="auth-back" type="button" onClick={() => { setStep("email"); setDigits(Array(OTP_LENGTH).fill("")); setMessage(""); }}><ArrowLeft size={15} /> {t("signin.useAnother")}</button></div>
         </form>
       )}
       {message && <p className="auth-message" role="status">{message}</p>}
-      <small>Access is available only after a project enquiry has been approved. Codes expire after 20 minutes.</small>
+      <small>{t("signin.accessNote")}</small>
     </div>
   );
 }
