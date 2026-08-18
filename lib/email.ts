@@ -41,10 +41,10 @@ export async function sendOtpEmail(email: string, otp: string) {
     from: from(),
     to: email,
     subject: `${otp} is your MACM sign-in code`,
-    text: `Your MACM sign-in code is ${otp}. It expires in 5 minutes and can only be used once. If you did not request this, you can ignore this email.`,
+    text: `Your MACM sign-in code is ${otp}. It expires in 20 minutes and can only be used once. If you did not request this, you can ignore this email.`,
     html: emailFrame(
       "Your secure sign-in code",
-      `<p style="margin:0 0 20px;color:#42516a;line-height:1.7">Enter this code to open your MACM client workspace. It expires in five minutes.</p><div style="font-size:34px;font-weight:700;letter-spacing:10px;color:#0846c7;background:#eef7ff;border-radius:16px;padding:18px;text-align:center">${safeOtp}</div><p style="margin:20px 0 0;color:#64748b;font-size:13px;line-height:1.6">A new request replaces the previous code. After three incorrect attempts, request a fresh code.</p>`,
+      `<p style="margin:0 0 20px;color:#42516a;line-height:1.7">Enter this code to open your MACM client workspace. It expires in 20 minutes.</p><div style="font-size:34px;font-weight:700;letter-spacing:10px;color:#0846c7;background:#eef7ff;border-radius:16px;padding:18px;text-align:center">${safeOtp}</div><p style="margin:20px 0 0;color:#64748b;font-size:13px;line-height:1.6">A new request replaces the previous code. After three incorrect attempts, request a fresh code.</p>`,
       "Do not share this sign-in code with anyone.",
     ),
   });

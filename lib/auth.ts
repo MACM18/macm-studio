@@ -67,7 +67,7 @@ export const auth = betterAuth({
   plugins: [
     emailOTP({
       otpLength: 6,
-      expiresIn: 300,
+      expiresIn: 20 * 60,
       allowedAttempts: 3,
       disableSignUp: true,
       resendStrategy: "rotate",

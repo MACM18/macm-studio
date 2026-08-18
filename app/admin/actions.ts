@@ -162,6 +162,24 @@ export async function updateProject(projectId: string, formData: FormData) {
   revalidatePath(`/portal`);
 }
 
+export async function archiveProject(projectId: string, formData: FormData) {
+  const { user: admin } = await requireAdmin();
+  const confirmation = text(formData, "confirmation", 200);
+  const project = await prisma.project.findUnique({ where: { id: projectId }, select: { id: true, title: true, ownerId: true, visibility: true } });
+  if (!project) throw new Error("Project not found.");
+  if (project.visibility === "ARCHIVED") return;
+  if (confirmation !== project.title.trim()) throw new Error("Type the exact project title to archive it.");
+  await prisma.$transaction(async (tx) => {
+    await tx.project.update({ where: { id: project.id }, data: { visibility: "ARCHIVED" } });
+    await tx.auditLog.create({ data: { actorId: admin.id, action: "project.archived", entityType: "Project", entityId: project.id, metadata: { title: project.title, ownerId: project.ownerId } } });
+  });
+  revalidatePath("/admin/projects");
+  revalidatePath(`/admin/projects/${project.id}`);
+  revalidatePath("/portal");
+  revalidatePath(`/portal/projects/${project.id}`);
+  redirect("/admin/projects?view=archived&archived=1");
+}
+
 const milestoneSchema = z.object({
   title: z.string().trim().min(2).max(160),
   description: z.string().trim().max(1000),

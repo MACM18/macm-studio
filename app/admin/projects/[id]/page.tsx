@@ -12,6 +12,7 @@ import {
 import { prisma } from "@/lib/db";
 import { calculateProjectProgress, milestoneWeightsAreValid } from "@/lib/project-progress";
 import { requireAdmin } from "@/lib/auth-guards";
+import { ProjectArchiveForm } from "@/components/project-archive-form";
 
 const dateValue = (date: Date | null) => date ? date.toISOString().slice(0, 10) : "";
 const projectStatuses = ["PLANNING", "IN_PROGRESS", "REVIEW", "ON_HOLD", "COMPLETE", "CANCELLED"] as const;
@@ -85,6 +86,8 @@ export default async function ProjectEditorPage({ params }: { params: Promise<{ 
         <form action={createProjectUpdate.bind(null, project.id)} className="workspace-form"><label>Update title<input name="title" required placeholder="Homepage direction is ready" /></label><label>Message<textarea name="body" rows={5} required placeholder="Explain what changed and what happens next in clear language." /></label><button className="button">Save draft update</button></form>
         {project.updates.length > 0 && <div className="admin-update-list">{project.updates.map((update) => <article key={update.id}><div className="workspace-card-top"><span className={`status-pill status-${update.status.toLowerCase()}`}>{update.status}</span><small>{update.createdAt.toLocaleDateString("en-LK", { dateStyle: "medium" })}</small></div>{update.status === "DRAFT" ? <form action={updateDraftProjectUpdate.bind(null, update.id)} className="workspace-form"><label>Title<input name="title" required defaultValue={update.title} /></label><label>Message<textarea name="body" rows={4} required defaultValue={update.body} /></label><button className="button button-secondary button-small">Save draft changes</button></form> : <><h3>{update.title}</h3><p>{update.body}</p></>}<div className="admin-action-row">{update.status === "DRAFT" ? <form action={publishProjectUpdate.bind(null, update.id)}><button className="button button-small">Publish and email</button></form> : <span className={`status-pill status-${update.notificationStatus.toLowerCase()}`}>EMAIL {update.notificationStatus}</span>}{update.notificationStatus === "FAILED" && <form action={retryProjectUpdateEmail.bind(null, update.id)}><button className="button button-secondary button-small">Retry email</button></form>}</div>{update.notificationError && <small className="error-copy">{update.notificationError}</small>}</article>)}</div>}
       </section>
+
+      {project.visibility !== "ARCHIVED" ? <section className="workspace-card form-card danger-zone"><div className="section-title-small"><span className="kicker">DANGER ZONE</span><h2>Archive this project</h2><p>Archiving removes the project from active admin and client views. Milestones, updates, links, payment history, and audit history stay preserved and the visibility can be restored later.</p></div><ProjectArchiveForm projectId={project.id} projectTitle={project.title} /></section> : <section className="workspace-card form-card"><div className="section-title-small"><span className="kicker">ARCHIVED PROJECT</span><h2>This project is archived.</h2><p>Restore it by changing Portal visibility back to Draft or Published in Project settings.</p></div></section>}
     </div>
   );
 }

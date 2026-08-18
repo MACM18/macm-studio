@@ -1,21 +1,25 @@
+import Link from "next/link";
+import { ArrowUpRight, CalendarDays, CircleUserRound } from "lucide-react";
 import { requireClient } from "@/lib/auth-guards";
 import { updateProfile } from "@/app/portal/actions";
+import { prisma } from "@/lib/db";
+import { calculateProjectProgress } from "@/lib/project-progress";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Your profile | MACM", robots: { index: false, follow: false } };
 
 export default async function ProfilePage() {
   const { user } = await requireClient();
-  return (
-    <section className="workspace-card workspace-panel-narrow">
-      <div className="panel-heading"><div><span className="kicker">CONTACT DETAILS</span><h2>Keep your details current.</h2></div><p>Your sign-in email is managed by MACM and cannot be changed here.</p></div>
-      <form action={updateProfile} className="workspace-form two-column-form">
-        <label>Full name<input name="name" required defaultValue={user.name} /></label>
-        <label>Company<input name="company" defaultValue={user.company ?? ""} /></label>
-        <label>Phone<input name="phone" type="tel" defaultValue={user.phone ?? ""} /></label>
-        <label>Sign-in email<input value={user.email} disabled aria-describedby="locked-email" /></label>
-        <small id="locked-email">Ask MACM if your sign-in email needs to change.</small>
-        <button className="button">Save profile</button>
-      </form>
-    </section>
-  );
+  const projects = await prisma.project.findMany({
+    where: { ownerId: user.id, visibility: { in: ["DRAFT", "PUBLISHED"] } },
+    include: {
+      milestones: { orderBy: { sortOrder: "asc" } },
+      updates: { where: { status: "PUBLISHED" }, orderBy: { publishedAt: "desc" }, take: 1 },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  const updates = projects.flatMap((project) => project.updates.map((update) => ({ ...update, projectTitle: project.title }))).sort((a, b) => (b.publishedAt?.getTime() ?? 0) - (a.publishedAt?.getTime() ?? 0)).slice(0, 5);
+  const averageProgress = projects.length ? Math.round(projects.reduce((total, project) => total + calculateProjectProgress(project.milestones), 0) / projects.length) : 0;
+
+  return <div className="workspace-stack"><section id="profile-details" className="workspace-card workspace-panel-narrow"><div className="panel-heading"><div><span className="kicker">CONTACT DETAILS</span><h2>Keep your details current.</h2></div><p>Your sign-in email is managed by MACM and cannot be changed here.</p></div><form action={updateProfile} className="workspace-form two-column-form"><label>Full name<input name="name" required defaultValue={user.name} /></label><label>Company<input name="company" defaultValue={user.company ?? ""} /></label><label>Phone<input name="phone" type="tel" defaultValue={user.phone ?? ""} /></label><label>Sign-in email<input value={user.email} disabled aria-describedby="locked-email" /></label><small id="locked-email">Ask MACM if your sign-in email needs to change.</small><button className="button">Save profile</button></form></section><div className="profile-focus-nav" aria-label="Profile focus"><a href="#profile-details">My details</a><a href="#profile-progress">Project progress</a><a href="#profile-updates">Latest updates</a></div><section id="profile-progress"><div className="section-title-small"><span className="kicker">PROJECT PULSE</span><h2>A clearer view of what is moving.</h2><p>Keep your contact details nearby, then jump straight to progress, the latest studio notes, or your next conversation.</p></div><div className="profile-pulse-grid"><article className="workspace-card profile-pulse-card"><CircleUserRound size={19} color="rgb(var(--signal))" /><strong>{projects.length}</strong><span>active project{projects.length === 1 ? "" : "s"}</span></article><article className="workspace-card profile-pulse-card"><CalendarDays size={19} color="rgb(var(--signal))" /><strong>{averageProgress}%</strong><span>average project progress</span></article><Link href="/portal/appointments" className="workspace-card profile-pulse-card"><CalendarDays size={19} color="rgb(var(--signal))" /><strong>Meetings</strong><span>View upcoming calls <ArrowUpRight size={14} /></span></Link></div>{projects.length ? <div className="profile-project-list">{projects.map((project) => { const progress = calculateProjectProgress(project.milestones); const nextMilestone = project.milestones.find((milestone) => milestone.progress < 100 && milestone.state !== "COMPLETE"); const latestUpdate = project.updates[0]; return <article className="workspace-card profile-project-card" key={project.id}><div className="profile-project-meta"><span className={`status-pill status-${project.status.toLowerCase()}`}>{project.status.replaceAll("_", " ")}</span><strong>{progress}% complete</strong></div><h3>{project.title}</h3><p>{nextMilestone ? `Next focus: ${nextMilestone.title}${nextMilestone.dueDate ? ` · due ${nextMilestone.dueDate.toLocaleDateString("en-LK", { dateStyle: "medium" })}` : ""}` : "All planned stages are complete."}</p><div className="progress-track"><i style={{ width: `${progress}%` }} /></div><div className="project-card-footer"><span>{latestUpdate ? `Latest note: ${latestUpdate.title}` : "No published notes yet"}</span><Link href={`/portal/projects/${project.id}`}>View progress <ArrowUpRight size={14} /></Link></div></article>; })}</div> : <div className="workspace-empty compact"><p>Your project pulse will appear here after your first project is prepared.</p></div>}</section><section id="profile-updates"><div className="section-title-small"><span className="kicker">LATEST UPDATES</span><h2>Notes from the studio</h2></div>{updates.length ? <div className="profile-update-list">{updates.map((update) => <article className="workspace-card profile-update-card" key={update.id}><small>{update.projectTitle} · {update.publishedAt?.toLocaleDateString("en-LK", { dateStyle: "medium" })}</small><h3>{update.title}</h3><p>{update.body}</p></article>)}</div> : <div className="workspace-empty compact"><p>Published project updates will appear here when the studio has a progress note to share.</p></div>}</section></div>;
 }
