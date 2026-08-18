@@ -28,6 +28,10 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/generated ./generated
 COPY --from=builder --chown=nextjs:nodejs /app/scripts/start-production.sh ./scripts/start-production.sh
+# Keep the backup-gated data utility available for an explicit operator run;
+# it is not executed as part of the web server startup.
+COPY --from=builder --chown=nextjs:nodejs /app/scripts/backfill-encrypted-data.ts ./scripts/backfill-encrypted-data.ts
+COPY --from=builder --chown=nextjs:nodejs /app/lib/data-encryption.ts ./lib/data-encryption.ts
 USER nextjs
 EXPOSE 3000
 CMD ["sh", "./scripts/start-production.sh"]
