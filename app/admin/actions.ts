@@ -10,6 +10,7 @@ import { normalizeEmail } from "@/lib/identity";
 import { milestoneWeightsAreValid } from "@/lib/project-progress";
 import { paymentMilestonesFromScope } from "@/lib/scope";
 import { sendProjectUpdateEmail } from "@/lib/email";
+import { sendTelegramCustomerUpdate } from "@/lib/telegram-customer";
 import { readPrivateJson, readPrivateText, writePrivateText } from "@/lib/private-data";
 
 const text = (formData: FormData, key: string, maximum: number) => String(formData.get(key) ?? "").trim().slice(0, maximum);
@@ -107,6 +108,17 @@ export async function setClientAccess(clientId: string, status: "ACTIVE" | "SUSP
     await tx.user.update({ where: { id: clientId }, data: { status } });
     if (status === "SUSPENDED") await tx.session.deleteMany({ where: { userId: clientId } });
     await tx.auditLog.create({ data: { actorId: admin.id, action: `client.${status.toLowerCase()}`, entityType: "User", entityId: clientId } });
+  });
+  revalidatePath(`/admin/clients/${clientId}`);
+}
+
+export async function revokeClientTelegram(clientId: string) {
+  const { user: admin } = await requireAdmin();
+  const client = await prisma.user.findFirst({ where: { id: clientId, role: "CLIENT" }, select: { id: true } });
+  if (!client) throw new Error("Client not found.");
+  await prisma.$transaction(async (tx) => {
+    await tx.telegramConnection.updateMany({ where: { userId: clientId, revokedAt: null }, data: { enabled: false, revokedAt: new Date() } });
+    await tx.auditLog.create({ data: { actorId: admin.id, action: "telegram.revoked_by_admin", entityType: "User", entityId: clientId } });
   });
   revalidatePath(`/admin/clients/${clientId}`);
 }
@@ -264,9 +276,10 @@ export async function updateDraftProjectUpdate(updateId: string, formData: FormD
   revalidatePath(`/admin/projects/${existing.projectId}`);
 }
 
-async function notifyUpdate(updateId: string) {
+async function notifyUpdateEmail(updateId: string) {
   const update = await prisma.projectUpdate.findUnique({ where: { id: updateId }, include: { project: { include: { owner: true } } } });
   if (!update || update.status !== "PUBLISHED") throw new Error("Published update not found.");
+  if (update.notificationStatus === "SENT") return true;
   try {
     await sendProjectUpdateEmail({
       email: update.project.owner.email,
@@ -284,6 +297,18 @@ async function notifyUpdate(updateId: string) {
   }
 }
 
+async function notifyUpdateTelegram(updateId: string) {
+  const update = await prisma.projectUpdate.findUnique({ where: { id: updateId }, include: { project: { include: { owner: true } } } });
+  if (!update || update.status !== "PUBLISHED") throw new Error("Published update not found.");
+  if (update.telegramStatus === "SENT") return true;
+  return sendTelegramCustomerUpdate({ updateId, userId: update.project.ownerId, projectId: update.projectId, projectTitle: update.project.title, updateTitle: update.title, updateBody: readPrivateText(update.bodyEncrypted, update.body) ?? "" });
+}
+
+async function notifyUpdate(updateId: string) {
+  const [email, telegram] = await Promise.all([notifyUpdateEmail(updateId), notifyUpdateTelegram(updateId)]);
+  return { email, telegram };
+}
+
 export async function publishProjectUpdate(updateId: string) {
   const { user: admin } = await requireAdmin();
   const update = await prisma.projectUpdate.findUnique({ where: { id: updateId } });
@@ -291,7 +316,7 @@ export async function publishProjectUpdate(updateId: string) {
   if (update.status === "PUBLISHED") return;
   await prisma.projectUpdate.update({ where: { id: updateId }, data: { status: "PUBLISHED", publishedAt: new Date(), notificationStatus: "PENDING", notificationError: null } });
   const delivered = await notifyUpdate(updateId);
-  await audit(admin.id, "project_update.published", "ProjectUpdate", updateId, { projectId: update.projectId, delivered });
+  await audit(admin.id, "project_update.published", "ProjectUpdate", updateId, { projectId: update.projectId, emailDelivered: delivered.email, telegramDelivered: delivered.telegram });
   revalidatePath(`/admin/projects/${update.projectId}`);
   revalidatePath(`/portal/projects/${update.projectId}`);
 }
@@ -300,7 +325,16 @@ export async function retryProjectUpdateEmail(updateId: string) {
   const { user: admin } = await requireAdmin();
   const update = await prisma.projectUpdate.findUnique({ where: { id: updateId }, select: { projectId: true, status: true } });
   if (!update || update.status !== "PUBLISHED") throw new Error("Only published updates can be retried.");
-  const delivered = await notifyUpdate(updateId);
-  await audit(admin.id, "project_update.notification_retried", "ProjectUpdate", updateId, { projectId: update.projectId, delivered });
+  const delivered = await notifyUpdateEmail(updateId);
+  await audit(admin.id, "project_update.email_retried", "ProjectUpdate", updateId, { projectId: update.projectId, delivered });
+  revalidatePath(`/admin/projects/${update.projectId}`);
+}
+
+export async function retryProjectUpdateTelegram(updateId: string) {
+  const { user: admin } = await requireAdmin();
+  const update = await prisma.projectUpdate.findUnique({ where: { id: updateId }, select: { projectId: true, status: true } });
+  if (!update || update.status !== "PUBLISHED") throw new Error("Only published updates can be retried.");
+  const delivered = await notifyUpdateTelegram(updateId);
+  await audit(admin.id, "project_update.telegram_retried", "ProjectUpdate", updateId, { projectId: update.projectId, delivered });
   revalidatePath(`/admin/projects/${update.projectId}`);
 }

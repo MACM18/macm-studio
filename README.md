@@ -95,6 +95,26 @@ TELEGRAM_MESSAGE_THREAD_ID=
 
 Create the bot with BotFather, add it to the destination group or channel, grant permission to post, and obtain the numeric chat ID. If a channel is not configured, its status remains `NOT_ATTEMPTED`; the lead remains safely stored.
 
+### Customer Telegram notifications
+
+Customer Telegram delivery is separate from the internal lead-alert chat. Customers connect from **Portal → Profile** by opening a one-time link and pressing **Start** in the MACM bot; no phone number is requested or stored. Add these server-only variables:
+
+```env
+TELEGRAM_BOT_USERNAME=your_bot_username
+TELEGRAM_WEBHOOK_SECRET=generate-a-long-random-secret
+TELEGRAM_WEBHOOK_URL=https://macm.lk/api/telegram/webhook
+```
+
+Configure the webhook once with Bot API (replace the values with your deployment secrets):
+
+```sh
+curl -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \\
+  --data-urlencode "url=${TELEGRAM_WEBHOOK_URL}" \\
+  --data-urlencode "secret_token=${TELEGRAM_WEBHOOK_SECRET}"
+```
+
+After connecting, the customer must explicitly enable project-update notifications. Published updates are sent only to an active, visible project connection; email delivery remains independent and Telegram failures can be retried from the admin project editor. Never expose the bot token, webhook secret, link tokens, or chat IDs to browser code or logs.
+
 ## Google Analytics
 
 The site uses the Google tag ID in `NEXT_PUBLIC_GOOGLE_TAG_ID` and sends data to
