@@ -29,6 +29,13 @@ type GoogleCalendarEvent = {
 
 type GoogleEventsResponse = { items?: GoogleCalendarEvent[] };
 
+export class GoogleCalendarError extends Error {
+  constructor(message: string, readonly status?: number) {
+    super(message);
+    this.name = "GoogleCalendarError";
+  }
+}
+
 export type CalendarAppointment = {
   id: string;
   summary: string;
@@ -49,7 +56,8 @@ function base64Url(value: string | Buffer) {
 
 function getConfig(): GoogleCalendarConfig {
   const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
-  const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
+  const rawPrivateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.trim();
+  const privateKey = rawPrivateKey?.replace(/^"([\s\S]*)"$/, "$1").replace(/\\r/g, "\r").replace(/\\n/g, "\n").trim();
   const calendarId = process.env.GOOGLE_CALENDAR_ID?.trim();
   if (!serviceAccountEmail || !privateKey || !calendarId) {
     throw new Error("Google Calendar is not configured.");
@@ -82,7 +90,12 @@ async function getAccessToken(config: GoogleCalendarConfig) {
   const header = base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const payload = base64Url(JSON.stringify({ iss: config.serviceAccountEmail, scope: CALENDAR_SCOPE, aud: GOOGLE_TOKEN_URL, iat: issuedAt, exp: issuedAt + 3600 }));
   const unsignedToken = `${header}.${payload}`;
-  const signature = createSign("RSA-SHA256").update(unsignedToken).sign(config.privateKey);
+  let signature: Buffer;
+  try {
+    signature = createSign("RSA-SHA256").update(unsignedToken).sign(config.privateKey);
+  } catch {
+    throw new GoogleCalendarError("Google Calendar private key could not be parsed. Store the complete PEM key and preserve its line breaks.");
+  }
   const assertion = `${unsignedToken}.${base64Url(signature)}`;
   const response = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
@@ -90,9 +103,9 @@ async function getAccessToken(config: GoogleCalendarConfig) {
     body: new URLSearchParams({ grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", assertion }),
     cache: "no-store",
   });
-  if (!response.ok) throw new Error("Google Calendar authentication failed.");
+  if (!response.ok) throw new GoogleCalendarError("Google Calendar authentication failed. Check the service-account email, private key, and enabled Calendar API.", response.status);
   const body = (await response.json()) as { access_token?: string; expires_in?: number };
-  if (!body.access_token) throw new Error("Google Calendar did not return an access token.");
+  if (!body.access_token) throw new GoogleCalendarError("Google Calendar did not return an access token.");
   tokenCache = { accessToken: body.access_token, expiresAt: Date.now() + Math.max(60, body.expires_in ?? 3600) * 1000 };
   return body.access_token;
 }
@@ -111,7 +124,16 @@ async function listEvents(config: GoogleCalendarConfig, timeMin: Date, timeMax: 
     headers: { authorization: `Bearer ${accessToken}` },
     cache: "no-store",
   });
-  if (!response.ok) throw new Error("Google Calendar appointments could not be loaded.");
+  if (!response.ok) {
+    let reason = "the service account cannot read this calendar";
+    try {
+      const body = (await response.json()) as { error?: { message?: string } };
+      if (body.error?.message) reason = body.error.message.slice(0, 240);
+    } catch {
+      // Keep the response generic if Google returns a non-JSON error body.
+    }
+    throw new GoogleCalendarError(`Google Calendar returned HTTP ${response.status}: ${reason}`, response.status);
+  }
   return (await response.json()) as GoogleEventsResponse;
 }
 
