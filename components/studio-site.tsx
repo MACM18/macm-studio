@@ -31,6 +31,7 @@ import { ADDONS, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, 
 import { FAQ_ITEMS } from "@/lib/seo";
 import { trackEvent } from "@/lib/analytics";
 import { useLanguage } from "@/components/language-provider";
+import { CopilotWidget } from "@/components/copilot/copilot-widget";
 import { type TranslationKey } from "@/lib/i18n";
 
 const formatMaintenanceMoney = (amount: number, currency: Currency) => formatMoney(amount, currency, currency === "USD" ? 2 : 0);
@@ -305,6 +306,72 @@ export function StudioSite() {
   const [statusMessage, setStatusMessage] = useState("");
   const leadStartedRef = useRef(false);
   const summaryRef = useRef<HTMLTextAreaElement>(null);
+  const [contactForm, setContactForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    projectType: "",
+    notes: "",
+  });
+
+  const handleCopilotAction = (action: string, params: Record<string, unknown>) => {
+    if (action === "configure_estimator") {
+      if (params.currency === "LKR" || params.currency === "USD") {
+        pricing.setCurrency(params.currency);
+      }
+      if (typeof params.stackId === "string" && ["static", "wordpress", "headless", "fullstack"].includes(params.stackId)) {
+        pricing.setStack(params.stackId as "static" | "wordpress" | "headless" | "fullstack");
+      }
+      if (Array.isArray(params.addonIds)) {
+        for (const addon of ADDONS) {
+          const shouldHave = params.addonIds.includes(addon.id);
+          const hasNow = pricing.addonIds.includes(addon.id);
+          if (shouldHave !== hasNow) {
+            pricing.toggleAddon(addon.id);
+          }
+        }
+      }
+      if (typeof params.fastTrack === "boolean" && params.fastTrack !== pricing.fastTrack) {
+        pricing.toggleFastTrack();
+      }
+      if (typeof params.extraInboxes === "number") {
+        pricing.setExtraInboxes(params.extraInboxes);
+      }
+      if (params.maintenancePlan === "none" || params.maintenancePlan === "care") {
+        pricing.setMaintenancePlan(params.maintenancePlan);
+      }
+      if (params.maintenanceBilling === "monthly" || params.maintenanceBilling === "yearly") {
+        pricing.setMaintenanceBilling(params.maintenanceBilling);
+      }
+      if (typeof params.maintenancePriority === "boolean" && params.maintenancePriority !== pricing.maintenancePriority) {
+        pricing.toggleMaintenancePriority();
+      }
+      scrollTo("#pricing-calculator");
+    } else if (action === "open_sample_preview") {
+      const target = String(params.sampleId || "").toLowerCase();
+      const found = SAMPLE_PROJECTS.find(
+        (p) => p.id.toLowerCase() === target || p.number === target || p.category.toLowerCase().includes(target)
+      );
+      if (found) {
+        setSelectedSample(found);
+      }
+    } else if (action === "scroll_to_section") {
+      if (typeof params.section === "string") {
+        scrollTo(params.section);
+      }
+    } else if (action === "prefill_enquiry_form") {
+      setContactForm((prev) => ({
+        name: typeof params.name === "string" ? params.name : prev.name,
+        email: typeof params.email === "string" ? params.email : prev.email,
+        phone: typeof params.phone === "string" ? params.phone : prev.phone,
+        projectType: typeof params.projectType === "string" ? params.projectType : prev.projectType,
+        notes: typeof params.notes === "string" ? params.notes : prev.notes,
+      }));
+      scrollTo("#contact");
+    } else if (action === "get_booking_schedule") {
+      window.location.assign("/portal/book");
+    }
+  };
 
   useEffect(() => {
     const stored = window.localStorage.getItem("macm-theme");
@@ -770,15 +837,15 @@ export function StudioSite() {
             <form className="lead-form" onSubmit={submitLead} onFocus={() => { if (!leadStartedRef.current) { leadStartedRef.current = true; trackEvent("lead_form_started"); } }}>
               <input className="honeypot" tabIndex={-1} autoComplete="off" name="website" aria-hidden="true" />
               <div className="field-row">
-                <label><span>{t("contact.name")}</span><input name="name" required maxLength={120} placeholder={t("contact.namePlaceholder")} /></label>
-                <label><span>{t("contact.email")}</span><input type="email" name="email" required maxLength={254} placeholder={t("contact.emailPlaceholder")} /></label>
+                <label><span>{t("contact.name")}</span><input name="name" required maxLength={120} placeholder={t("contact.namePlaceholder")} value={contactForm.name} onChange={(e) => setContactForm((prev) => ({ ...prev, name: e.target.value }))} /></label>
+                <label><span>{t("contact.email")}</span><input type="email" name="email" required maxLength={254} placeholder={t("contact.emailPlaceholder")} value={contactForm.email} onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))} /></label>
               </div>
               <div className="field-row">
-                <label><span>{t("contact.phone")}</span><input name="phone" maxLength={40} placeholder={t("contact.phonePlaceholder")} /></label>
-                <label><span>{t("contact.projectType")}</span><select name="projectType" required defaultValue={scopeLocked ? pricing.scope.stack.name : ""} key={`${scopeLocked}-${pricing.scope.stack.id}`}><option value="" disabled>{t("contact.selectProject")}</option>{TECH_STACKS.map((stack) => <option value={stack.name} key={stack.id}>{stack.name}</option>)}</select></label>
+                <label><span>{t("contact.phone")}</span><input name="phone" maxLength={40} placeholder={t("contact.phonePlaceholder")} value={contactForm.phone} onChange={(e) => setContactForm((prev) => ({ ...prev, phone: e.target.value }))} /></label>
+                <label><span>{t("contact.projectType")}</span><select name="projectType" required value={contactForm.projectType || (scopeLocked ? pricing.scope.stack.name : "")} onChange={(e) => setContactForm((prev) => ({ ...prev, projectType: e.target.value }))}><option value="" disabled>{t("contact.selectProject")}</option>{TECH_STACKS.map((stack) => <option value={stack.name} key={stack.id}>{stack.name}</option>)}</select></label>
               </div>
               <label><span>{t("contact.estimate")}</span><textarea ref={summaryRef} name="budgetSummary" rows={6} readOnly value={scopeLocked ? pricing.scope.summary : t("contact.lockHint")} onChange={() => undefined} /></label>
-              <label><span>{t("contact.notes")}</span><textarea name="notes" rows={5} maxLength={4000} placeholder={t("contact.notesPlaceholder")} /></label>
+              <label><span>{t("contact.notes")}</span><textarea name="notes" rows={5} maxLength={4000} placeholder={t("contact.notesPlaceholder")} value={contactForm.notes} onChange={(e) => setContactForm((prev) => ({ ...prev, notes: e.target.value }))} /></label>
               <div className="form-footer">
                 <small>{t("contact.sendConsent")}</small>
                 <button className="button" type="submit" disabled={status === "sending"}>{status === "sending" ? t("contact.sending") : t("contact.send")}<Send size={16} /></button>
@@ -814,6 +881,8 @@ export function StudioSite() {
           </div>
         </div>
       )}
+
+      <CopilotWidget onAction={handleCopilotAction} />
 
       <footer>
         <div className="container footer-grid">
