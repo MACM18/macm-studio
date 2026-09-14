@@ -318,3 +318,18 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([actorId, createdAt])
 }
+
+model StudioKnowledgeChunk {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  title     String
+  category  String
+  content   String
+  metadata  Json?
+  embedding Unsupported("vector(1024)")?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+

@@ -14,7 +14,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:validate": "prisma validate",
     "data:key": "node scripts/generate-data-key.mjs",
-    "data:backfill": "node --experimental-strip-types scripts/backfill-encrypted-data.ts"
+    "data:backfill": "node --experimental-strip-types scripts/backfill-encrypted-data.ts",
+    "data:seed-copilot": "node --experimental-strip-types scripts/seed-copilot-knowledge.ts"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.6.29",
