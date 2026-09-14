@@ -31,8 +31,7 @@ import { ADDONS, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, 
 import { FAQ_ITEMS } from "@/lib/seo";
 import { trackEvent } from "@/lib/analytics";
 import { useLanguage } from "@/components/language-provider";
-import { LanguageToggle } from "@/components/language-toggle";
-import { translate, type TranslationKey } from "@/lib/i18n";
+import { type TranslationKey } from "@/lib/i18n";
 
 const formatMaintenanceMoney = (amount: number, currency: Currency) => formatMoney(amount, currency, currency === "USD" ? 2 : 0);
 
@@ -289,9 +288,7 @@ function SamplePreview({ project, state, checkingLabel, comingLabel, comingCopy 
 }
 
 export function StudioSite() {
-  const { locale, t } = useLanguage();
-  const heroEnglish = (key: TranslationKey) => translate("en", key);
-  const heroSinhala = (key: TranslationKey) => locale === "si" ? translate("si", key) : null;
+  const { t } = useLanguage();
   const localizedFaqItems = FAQ_ITEMS.map((item, index) => ({
     ...item,
     question: t(`faq.${index + 1}.question` as TranslationKey),
@@ -481,7 +478,6 @@ export function StudioSite() {
             ))}
             <div className="mobile-nav-controls">
               <CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} />
-              <LanguageToggle compact />
               <button className="icon-button" type="button" aria-label={theme === "dark" ? t("common.lightMode") : t("common.darkMode")} onClick={toggleTheme}>
                 {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
               </button>
@@ -490,7 +486,6 @@ export function StudioSite() {
           </div>
           <div className="nav-actions">
             <CurrencyToggle currency={pricing.currency} setCurrency={pricing.setCurrency} />
-            <LanguageToggle compact />
             <button className="icon-button" type="button" aria-label={theme === "dark" ? t("common.lightMode") : t("common.darkMode")} onClick={toggleTheme}>
               {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
             </button>
@@ -506,19 +501,19 @@ export function StudioSite() {
         <section className="hero section-grid">
           <div className="hero-grid-lines" aria-hidden="true" />
           <div className="container hero-inner">
-            <div className="eyebrow"><span>{heroEnglish("hero.eyebrow")}</span>{heroSinhala("hero.overlay.eyebrow") && <span className="hero-translation">{heroSinhala("hero.overlay.eyebrow")}</span>}<span className="eyebrow-line" /></div>
-            <div className="hero-title-wrap"><h1>{heroEnglish("hero.title").split(". ").map((line, index) => <span key={line}>{line}{index < 2 ? "." : ""}{index < 2 && <br />}</span>)}</h1>{heroSinhala("hero.overlay.title") && <span className="hero-translation hero-title-translation">{heroSinhala("hero.overlay.title")}</span>}</div>
+            <div className="eyebrow"><span>{t("hero.eyebrow")}</span><span className="eyebrow-line" /></div>
+            <div className="hero-title-wrap"><h1>{t("hero.title").split(". ").map((line, index) => <span key={line}>{line}{index < 2 ? "." : ""}{index < 2 && <br />}</span>)}</h1></div>
             <div className="hero-bottom">
-            <div className="hero-copy-wrap"><p className="hero-copy">{heroEnglish("hero.copy")}</p>{heroSinhala("hero.overlay.copy") && <span className="hero-translation">{heroSinhala("hero.overlay.copy")}</span>}</div>
+              <div className="hero-copy-wrap"><p className="hero-copy">{t("hero.copy")}</p></div>
               <div className="hero-actions">
-                <div className="hero-action-wrap"><button className="button" type="button" onClick={() => handlePlanWebsiteClick("hero")}>{heroEnglish("nav.plan")} <ArrowDown size={17} /></button>{heroSinhala("hero.overlay.plan") && <span className="hero-translation">{heroSinhala("hero.overlay.plan")}</span>}</div>
-                <div className="hero-action-wrap"><button className="text-link" type="button" onClick={() => scrollTo("#process")}>{heroEnglish("hero.process")} <ArrowRight size={17} /></button>{heroSinhala("hero.overlay.process") && <span className="hero-translation">{heroSinhala("hero.overlay.process")}</span>}</div>
+                <button className="button" type="button" onClick={() => handlePlanWebsiteClick("hero")}>{t("nav.plan")} <ArrowDown size={17} /></button>
+                <button className="text-link" type="button" onClick={() => scrollTo("#process")}>{t("hero.process")} <ArrowRight size={17} /></button>
               </div>
             </div>
             <div className="metric-strip" aria-label={t("work.copy")}>
-              <div><Globe2 /><span><strong>{heroEnglish("hero.websites")}</strong> {heroEnglish("hero.websitesDetail")}{heroSinhala("hero.overlay.websites") && <small className="hero-translation">{heroSinhala("hero.overlay.websites")}</small>}</span></div>
-              <div><CircleDollarSign /><span><strong>10%</strong> {heroEnglish("hero.start")}{heroSinhala("hero.overlay.start") && <small className="hero-translation">{heroSinhala("hero.overlay.start")}</small>}</span></div>
-              <div><ServerCog /><span><strong>{heroEnglish("hero.rightSized")}</strong> {heroEnglish("hero.vps")}{heroSinhala("hero.overlay.vps") && <small className="hero-translation">{heroSinhala("hero.overlay.vps")}</small>}</span></div>
+              <div><Globe2 /><span><strong>{t("hero.websites")}</strong> {t("hero.websitesDetail")}</span></div>
+              <div><CircleDollarSign /><span><strong>10%</strong> {t("hero.start")}</span></div>
+              <div><ServerCog /><span><strong>{t("hero.rightSized")}</strong> {t("hero.vps")}</span></div>
             </div>
           </div>
         </section>
@@ -592,7 +587,7 @@ export function StudioSite() {
                 </button>;
               })}
             </div>
-            <p className="showcase-footnote"><span /> {locale === "si" ? "අලුත් samples ඒවායේ subdomain එක live වූ විට මෙහි පෙන්වයි." : "New samples will appear here as they go live on their own subdomain."}</p>
+            <p className="showcase-footnote"><span /> New samples will appear here as they go live on their own subdomain.</p>
           </div>
         </section>
 

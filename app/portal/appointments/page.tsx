@@ -2,7 +2,7 @@ import { ExternalLink, Video } from "lucide-react";
 import { requireClient } from "@/lib/auth-guards";
 import { googleCalendarIsConfigured, getGoogleCalendarTimeZone, listCalendarAppointments, type CalendarAppointment } from "@/lib/google-calendar";
 import { getServerLocale } from "@/lib/server-locale";
-import { translate, translateStatus } from "@/lib/i18n";
+import { translate, translateStatus, type Locale } from "@/lib/i18n";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ function formatAppointment(value: string, timeZone: string) {
   return new Intl.DateTimeFormat("en-LK", { dateStyle: "full", timeStyle: "short", timeZone }).format(new Date(value));
 }
 
-function AppointmentCard({ appointment, timeZone, locale }: { appointment: CalendarAppointment; timeZone: string; locale: "en" | "si" }) {
+function AppointmentCard({ appointment, timeZone, locale }: { appointment: CalendarAppointment; timeZone: string; locale: Locale }) {
   return <article className="workspace-card appointment-card"><div className="workspace-card-top"><span className={`status-pill status-${appointment.status.toLowerCase()}`}>{translateStatus(locale, appointment.status)}</span><span>{formatAppointment(appointment.start, timeZone)}</span></div><h2>{appointment.summary}</h2><p>{formatAppointment(appointment.start, timeZone)} – {new Intl.DateTimeFormat("en-LK", { timeStyle: "short", timeZone }).format(new Date(appointment.end))}</p><div className="appointment-links">{appointment.meetUrl ? <a className="button button-small" href={appointment.meetUrl} target="_blank" rel="noopener noreferrer"><Video size={14} /> {translate(locale, "common.joinMeet")}</a> : <span className="appointment-pending">{translate(locale, "common.meetPending")}</span>}{appointment.htmlLink ? <a className="table-link" href={appointment.htmlLink} target="_blank" rel="noopener noreferrer">{translate(locale, "common.openCalendar")} <ExternalLink size={14} /></a> : null}</div></article>;
 }
 

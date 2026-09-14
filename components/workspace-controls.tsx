@@ -5,7 +5,7 @@ import { LogOut, Moon, Sun } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useLanguage } from "@/components/language-provider";
 
-export function WorkspaceTheme({ englishOnly = false }: { englishOnly?: boolean }) {
+export function WorkspaceTheme({ englishOnly = true }: { englishOnly?: boolean } = {}) {
   const { t } = useLanguage();
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   useEffect(() => {
@@ -24,7 +24,7 @@ export function WorkspaceTheme({ englishOnly = false }: { englishOnly?: boolean 
   return <button className="workspace-icon" type="button" onClick={toggle} aria-label={`${themeLabel} ${theme === "dark" ? "light" : "dark"}`}>{theme === "dark" ? <Sun size={17} /> : <Moon size={17} />}</button>;
 }
 
-export function SignOutButton({ englishOnly = false }: { englishOnly?: boolean }) {
+export function SignOutButton({ englishOnly = true }: { englishOnly?: boolean } = {}) {
   const { t } = useLanguage();
   const signOut = async () => {
     await authClient.signOut();

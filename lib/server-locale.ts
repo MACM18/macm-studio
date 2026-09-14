@@ -1,6 +1,5 @@
-import { cookies } from "next/headers";
-import { LANGUAGE_COOKIE, localeFromCookie } from "@/lib/i18n";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
-export async function getServerLocale() {
-  return localeFromCookie((await cookies()).get(LANGUAGE_COOKIE)?.value);
+export async function getServerLocale(): Promise<Locale> {
+  return DEFAULT_LOCALE;
 }

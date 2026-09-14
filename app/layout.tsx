@@ -4,9 +4,7 @@ import "@fontsource/manrope/500.css";
 import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";
 import "./globals.css";
-import { cookies } from "next/headers";
 import { LanguageProvider } from "@/components/language-provider";
-import { LANGUAGE_COOKIE, localeFromCookie } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://macm.lk"),
@@ -44,11 +42,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const locale = localeFromCookie((await cookies()).get(LANGUAGE_COOKIE)?.value);
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body><LanguageProvider initialLocale={locale}>{children}</LanguageProvider></body>
+    <html lang="en" suppressHydrationWarning>
+      <body><LanguageProvider>{children}</LanguageProvider></body>
     </html>
   );
 }
