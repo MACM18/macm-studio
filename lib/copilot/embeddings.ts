@@ -1,5 +1,4 @@
-import "server-only";
-import { DEFAULT_OPENROUTER_EMBEDDING_MODELS, getCopilotConfig } from "./config";
+import { DEFAULT_OPENROUTER_EMBEDDING_MODELS, getCopilotConfig } from "./config.ts";
 
 export async function generateEmbedding(text: string): Promise<number[] | null> {
   const config = getCopilotConfig();
