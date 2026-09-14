@@ -137,6 +137,9 @@ async function main() {
       });
       console.log(`✓ Indexed ${item.slug} (text-only)`);
     }
+
+    // Small delay to prevent rate-limiting spikes
+    await new Promise((resolve) => setTimeout(resolve, 250));
   }
 
   console.log("Ingestion complete!");
