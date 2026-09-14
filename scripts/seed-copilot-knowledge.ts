@@ -1,8 +1,8 @@
-import { PrismaClient, type Prisma } from "../generated/prisma/client.js";
+import { PrismaClient, type Prisma } from "../generated/prisma/client.ts";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { TECH_STACKS, ADDONS, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, INBOX_PRICE } from "../lib/pricing.js";
-import { FAQ_ITEMS } from "../lib/seo.js";
-import { generateEmbedding } from "../lib/copilot/embeddings.js";
+import { TECH_STACKS, ADDONS, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, INBOX_PRICE } from "../lib/pricing.ts";
+import { FAQ_ITEMS } from "../lib/seo.ts";
+import { generateEmbedding } from "../lib/copilot/embeddings.ts";
 
 const connectionString = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/macm";
 const adapter = new PrismaPg({ connectionString });
