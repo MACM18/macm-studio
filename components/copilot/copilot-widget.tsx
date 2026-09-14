@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, type FormEvent } from "react";
-import { MessageSquare, X, Send, Sparkles, Bot, ChevronDown, Check, ArrowUpRight } from "lucide-react";
+import { Sparkles, X, Send, RotateCcw, Check, ArrowRight, ExternalLink, Command } from "lucide-react";
 
 export interface CopilotActionPayload {
   action: string;
@@ -16,40 +16,63 @@ interface MessageItem {
   id: string;
   role: "user" | "assistant";
   content: string;
-  model?: string;
   actions?: CopilotActionPayload[];
 }
 
 const STARTER_PROMPTS = [
-  "What is the cost of a full-stack app with payments?",
-  "Show me healthcare & clinic website samples",
-  "How does the 3-stage milestone payment work?",
-  "Configure estimator for managed WordPress in USD",
+  { label: "⚡ Configure Estimator with Payments", query: "Configure the estimator for a Managed WordPress setup with payments in USD" },
+  { label: "📐 Compare Stacks & Timelines", query: "What tech stacks do you offer and what are the delivery timeframes?" },
+  { label: "🏥 View Clinical & Healthcare Work", query: "Show me healthcare and clinic website samples from your portfolio" },
+  { label: "🗓️ Book Discovery Call", query: "When can we book a 30-minute discovery call?" },
 ];
 
 export function CopilotWidget({ onAction }: CopilotWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activeModel, setActiveModel] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageItem[]>([
     {
       id: "welcome",
       role: "assistant",
       content:
-        "Hello! I am your MACM Studio Copilot. I can answer questions about our engineering process, search our pricing models, explore portfolio samples, or configure the project estimator for you in real time.",
+        "Welcome to MACM Studio. I can answer questions about our engineering standards, search live pricing, show portfolio samples, or configure the project estimator for you.",
     },
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Global shortcut: ⌘K or Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsOpen((prev) => !prev);
+      } else if (e.key === "Escape" && isOpen) {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen]);
+
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-      inputRef.current?.focus();
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen, messages]);
+
+  const handleReset = () => {
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant",
+        content:
+          "Welcome to MACM Studio. I can answer questions about our engineering standards, search live pricing, show portfolio samples, or configure the project estimator for you.",
+      },
+    ]);
+  };
 
   const handleSend = async (userText: string) => {
     const text = userText.trim();
@@ -67,7 +90,6 @@ export function CopilotWidget({ onAction }: CopilotWidgetProps) {
     setInput("");
     setLoading(true);
 
-    // Placeholder assistant message
     setMessages((prev) => [
       ...prev,
       { id: assistantMessageId, role: "assistant", content: "", actions: [] },
@@ -83,7 +105,7 @@ export function CopilotWidget({ onAction }: CopilotWidgetProps) {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: Failed to reach assistant`);
+        throw new Error(`HTTP ${response.status}`);
       }
 
       if (!response.body) return;
@@ -114,15 +136,7 @@ export function CopilotWidget({ onAction }: CopilotWidgetProps) {
                     : m
                 )
               );
-            } else if (event.type === "model") {
-              setActiveModel(event.model);
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMessageId ? { ...m, model: event.model } : m
-                )
-              );
             } else if (event.type === "action") {
-              // Trigger client action bridge
               onAction?.(event.action, event.params);
               setMessages((prev) =>
                 prev.map((m) =>
@@ -144,7 +158,7 @@ export function CopilotWidget({ onAction }: CopilotWidgetProps) {
                     ? {
                         ...m,
                         content:
-                          m.content + `\n\n*(Notice: ${event.message})*`,
+                          m.content + `\n\n*Notice: ${event.message}*`,
                       }
                     : m
                 )
@@ -155,14 +169,14 @@ export function CopilotWidget({ onAction }: CopilotWidgetProps) {
           }
         }
       }
-    } catch (err) {
+    } catch {
       setMessages((prev) =>
         prev.map((m) =>
           m.id === assistantMessageId
             ? {
                 ...m,
                 content:
-                  "I encountered a connection error. Please verify the OpenRouter API configuration and try again.",
+                  "Service is momentarily busy. Please ask again or reach us directly via the contact section.",
               }
             : m
         )
@@ -178,117 +192,143 @@ export function CopilotWidget({ onAction }: CopilotWidgetProps) {
   };
 
   return (
-    <div className="copilot-root">
-      {!isOpen && (
+    <>
+      {/* Floating Studio Capsule Dock */}
+      <div className="copilot-dock">
         <button
           type="button"
-          className="copilot-launcher"
-          aria-label="Open Studio Copilot assistant"
+          className="copilot-dock-trigger"
+          aria-label="Open Studio Assistant"
           onClick={() => setIsOpen(true)}
         >
-          <span className="copilot-launcher-glow" />
-          <Bot size={18} className="copilot-launcher-icon" />
-          <span className="copilot-launcher-label">Copilot</span>
-          <span className="copilot-launcher-pill">Free AI</span>
+          <span className="copilot-dock-pulse" />
+          <Sparkles size={14} className="copilot-dock-icon" />
+          <span className="copilot-dock-title">Studio Assistant</span>
+          <span className="copilot-dock-badge">
+            <Command size={10} /> K
+          </span>
         </button>
-      )}
+      </div>
 
+      {/* Slide-over Studio Palette Drawer */}
       {isOpen && (
-        <aside className="copilot-window" aria-label="MACM Studio Helper Copilot">
-          <header className="copilot-header">
-            <div className="copilot-identity">
-              <div className="copilot-avatar">
-                <Sparkles size={16} />
-              </div>
-              <div>
-                <div className="copilot-name">
-                  <strong>Studio Copilot</strong>
-                  <span className="copilot-status-dot" />
+        <div className="copilot-drawer-overlay" onClick={() => setIsOpen(false)}>
+          <aside
+            className="copilot-drawer"
+            role="dialog"
+            aria-label="MACM Studio Assistant"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <header className="copilot-drawer-header">
+              <div className="copilot-drawer-branding">
+                <div className="copilot-drawer-avatar">
+                  <Sparkles size={16} />
                 </div>
-                <small className="copilot-subtitle">
-                  {activeModel
-                    ? activeModel.split("/").pop()?.replace(":free", " (free)")
-                    : "Free OpenRouter fallback router"}
-                </small>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="copilot-close-btn"
-              aria-label="Minimize Copilot window"
-              onClick={() => setIsOpen(false)}
-            >
-              <ChevronDown size={18} />
-            </button>
-          </header>
-
-          <div className="copilot-messages">
-            {messages.map((m) => (
-              <div key={m.id} className={`copilot-bubble copilot-bubble-${m.role}`}>
-                <div className="copilot-bubble-content">
-                  {m.content}
-                  {m.actions && m.actions.length > 0 && (
-                    <div className="copilot-action-badges">
-                      {m.actions.map((act, idx) => (
-                        <span key={idx} className="copilot-action-badge">
-                          <Check size={12} /> Action: {act.action.replace(/_/g, " ")}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-                {m.model && (
-                  <div className="copilot-model-tag">
-                    {m.model.split("/").pop()}
+                <div>
+                  <div className="copilot-drawer-title">
+                    <span>MACM Studio Assistant</span>
+                    <span className="copilot-drawer-status">Active</span>
                   </div>
-                )}
+                  <p className="copilot-drawer-desc">Engineering guidance, RAG search & interactive site control</p>
+                </div>
               </div>
-            ))}
-            {loading && (
-              <div className="copilot-bubble copilot-bubble-assistant copilot-typing">
-                <span />
-                <span />
-                <span />
+              <div className="copilot-drawer-actions">
+                <button
+                  type="button"
+                  className="copilot-icon-btn"
+                  title="Reset conversation"
+                  onClick={handleReset}
+                >
+                  <RotateCcw size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="copilot-icon-btn"
+                  title="Close (Esc)"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </header>
+
+            {/* Messages Body */}
+            <div className="copilot-drawer-body">
+              {messages.map((m) => (
+                <div key={m.id} className={`copilot-msg copilot-msg-${m.role}`}>
+                  <div className="copilot-msg-bubble">
+                    <div className="copilot-msg-text">{m.content}</div>
+                    {m.actions && m.actions.length > 0 && (
+                      <div className="copilot-action-cards">
+                        {m.actions.map((act, idx) => (
+                          <div key={idx} className="copilot-action-card">
+                            <Check size={12} className="copilot-action-check" />
+                            <span>Executed: <strong>{act.action.replace(/_/g, " ")}</strong></span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {loading && (
+                <div className="copilot-msg copilot-msg-assistant">
+                  <div className="copilot-msg-bubble copilot-msg-loading">
+                    <span className="copilot-dot" />
+                    <span className="copilot-dot" />
+                    <span className="copilot-dot" />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Quick Starter Chips */}
+            {messages.length <= 2 && !loading && (
+              <div className="copilot-drawer-starters">
+                <span className="copilot-starters-label">Suggestions</span>
+                <div className="copilot-starters-grid">
+                  {STARTER_PROMPTS.map((item, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="copilot-starter-card"
+                      onClick={() => handleSend(item.query)}
+                    >
+                      <span>{item.label}</span>
+                      <ArrowRight size={12} className="copilot-starter-arrow" />
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
-          </div>
 
-          {messages.length <= 2 && !loading && (
-            <div className="copilot-starters">
-              {STARTER_PROMPTS.map((prompt) => (
+            {/* Input Bar */}
+            <form className="copilot-drawer-form" onSubmit={onSubmit}>
+              <div className="copilot-input-container">
+                <input
+                  ref={inputRef}
+                  className="copilot-drawer-input"
+                  value={input}
+                  placeholder="Ask a question or configure a project..."
+                  onChange={(e) => setInput(e.target.value)}
+                  disabled={loading}
+                />
                 <button
-                  key={prompt}
-                  type="button"
-                  className="copilot-starter-pill"
-                  onClick={() => handleSend(prompt)}
+                  type="submit"
+                  className="copilot-drawer-send"
+                  disabled={!input.trim() || loading}
+                  aria-label="Send message"
                 >
-                  {prompt}
+                  <Send size={14} />
                 </button>
-              ))}
-            </div>
-          )}
-
-          <form className="copilot-form" onSubmit={onSubmit}>
-            <input
-              ref={inputRef}
-              className="copilot-input"
-              value={input}
-              placeholder="Ask about pricing, tech, samples, or scope..."
-              onChange={(e) => setInput(e.target.value)}
-              disabled={loading}
-            />
-            <button
-              type="submit"
-              className="copilot-send-btn"
-              disabled={!input.trim() || loading}
-              aria-label="Send message"
-            >
-              <Send size={15} />
-            </button>
-          </form>
-        </aside>
+              </div>
+            </form>
+          </aside>
+        </div>
       )}
-    </div>
+    </>
   );
 }

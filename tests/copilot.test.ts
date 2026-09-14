@@ -19,12 +19,11 @@ describe("MACM Helper Copilot", () => {
     expect(searchTool?.function.parameters).toBeDefined();
   });
 
-  it("prioritizes updated free models and includes openrouter/free as the final fallback", () => {
-    expect(DEFAULT_OPENROUTER_MODELS[0]).toBe("nvidia/nemotron-3.5-lightning:free");
+  it("prioritizes openrouter/free router for instant, lightweight answers", () => {
+    expect(DEFAULT_OPENROUTER_MODELS[0]).toBe("openrouter/free");
     expect(DEFAULT_OPENROUTER_MODELS).toContain("poolside/laguna-xs-2.1:free");
-    expect(DEFAULT_OPENROUTER_MODELS).toContain("nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free");
     expect(DEFAULT_OPENROUTER_MODELS).toContain("google/gemma-4-26b-a4b-it:free");
-    expect(DEFAULT_OPENROUTER_MODELS[DEFAULT_OPENROUTER_MODELS.length - 1]).toBe("openrouter/free");
+    expect(DEFAULT_OPENROUTER_MODELS).toContain("nvidia/nemotron-3.5-lightning:free");
   });
 
   it("configures OpenRouter free embedding models", () => {
