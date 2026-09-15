@@ -27,7 +27,7 @@ import {
 } from "lucide-react";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { usePricingCalculator } from "@/hooks/usePricingCalculator";
-import { ADDONS, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, TECH_STACKS, formatMoney } from "@/lib/pricing";
+import { ADDONS, Addon, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, TECH_STACKS, formatMoney } from "@/lib/pricing";
 import { FAQ_ITEMS } from "@/lib/seo";
 import { trackEvent } from "@/lib/analytics";
 import { useLanguage } from "@/components/language-provider";
@@ -317,17 +317,34 @@ export function StudioSite() {
   const handleCopilotAction = (action: string, params: Record<string, unknown>) => {
     if (action === "configure_estimator") {
       const updates: Record<string, unknown> = {};
-      if (params.currency === "LKR" || params.currency === "USD") {
-        updates.currency = params.currency;
+      const rawCurr = String(params.currency || "").toUpperCase();
+      if (rawCurr === "LKR" || rawCurr === "USD") {
+        updates.currency = rawCurr as Currency;
       }
-      if (typeof params.stackId === "string" && ["static", "wordpress", "headless", "fullstack"].includes(params.stackId)) {
-        updates.stackId = params.stackId;
+
+      const rawStack = String(params.stackId || params.stack || "").toLowerCase();
+      if (rawStack.includes("head")) updates.stackId = "headless";
+      else if (rawStack.includes("word")) updates.stackId = "wordpress";
+      else if (rawStack.includes("full") || rawStack.includes("app")) updates.stackId = "fullstack";
+      else if (rawStack.includes("stat")) updates.stackId = "static";
+
+      const rawAddons = Array.isArray(params.addonIds)
+        ? params.addonIds
+        : Array.isArray(params.addons)
+        ? params.addons
+        : [];
+      if (rawAddons.length > 0) {
+        const clean: Addon["id"][] = [];
+        for (const a of rawAddons) {
+          const str = String(a).toLowerCase();
+          if (str.includes("pay")) clean.push("payments");
+          else if (str.includes("auth") || str.includes("user") || str.includes("account")) clean.push("auth");
+          else if (str.includes("api") || str.includes("webhook")) clean.push("api");
+          else if (str.includes("backup")) clean.push("dedicated-backup");
+        }
+        updates.addonIds = Array.from(new Set(clean));
       }
-      if (Array.isArray(params.addonIds)) {
-        updates.addonIds = params.addonIds.filter((id) =>
-          ["payments", "auth", "api", "dedicated-backup"].includes(String(id))
-        );
-      }
+
       if (typeof params.fastTrack === "boolean") {
         updates.fastTrack = params.fastTrack;
       }
@@ -345,10 +362,45 @@ export function StudioSite() {
       }
       pricing.configureScope(updates);
     } else if (action === "open_sample_preview") {
-      const target = String(params.sampleId || "").toLowerCase();
-      const found = SAMPLE_PROJECTS.find(
-        (p) => p.id.toLowerCase() === target || p.number === target || p.category.toLowerCase().includes(target)
+      const target = String(params.sampleId || params.sample || "").toLowerCase().trim();
+      let found = SAMPLE_PROJECTS.find(
+        (p) =>
+          p.id.toLowerCase() === target ||
+          p.number === target ||
+          p.category.toLowerCase().includes(target) ||
+          p.name.toLowerCase().includes(target)
       );
+
+      if (!found) {
+        if (
+          target.includes("mora") ||
+          target.includes("coffee") ||
+          target.includes("store") ||
+          target.includes("grocery") ||
+          target.includes("shop") ||
+          target.includes("ecommerce") ||
+          target.includes("e-commerce")
+        ) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "mora-coffee");
+        } else if (target.includes("saas") || target.includes("software") || target.includes("stackline") || target.includes("landing")) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "fieldnote");
+        } else if (target.includes("hearth") || target.includes("restaurant") || target.includes("dining") || target.includes("food")) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "harbor-hearth");
+        } else if (target.includes("ceylon") || target.includes("hotel") || target.includes("villa") || target.includes("resort") || target.includes("hospitality")) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "ceylon-house");
+        } else if (target.includes("northline") || target.includes("legal") || target.includes("law") || target.includes("attorney")) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "northline-legal");
+        } else if (target.includes("luma") || target.includes("health") || target.includes("clinic") || target.includes("wellness") || target.includes("doctor")) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "luma-health");
+        } else if (target.includes("aster") || target.includes("form") || target.includes("interior") || target.includes("design") || target.includes("architecture")) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "aster-form");
+        } else if (target.includes("kora") || target.includes("estate") || target.includes("property") || target.includes("real estate")) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "kora-estates");
+        } else if (target.includes("orbit") || target.includes("learn") || target.includes("course") || target.includes("education")) {
+          found = SAMPLE_PROJECTS.find((p) => p.id === "orbit-learning");
+        }
+      }
+
       if (found) {
         setSelectedSample(found);
       }

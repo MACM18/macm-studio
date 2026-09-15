@@ -172,6 +172,16 @@ export function CopilotWidget({
   const [activeTab, setActiveTab] = useState<"preview" | "chat">("chat");
   const [mouseActive, setMouseActive] = useState(true);
   const [activeSampleId, setActiveSampleId] = useState<string | null>(null);
+  const [justConfigured, setJustConfigured] = useState(false);
+  const configureTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerConfiguredEffect = () => {
+    setJustConfigured(true);
+    if (configureTimerRef.current) clearTimeout(configureTimerRef.current);
+    configureTimerRef.current = setTimeout(() => {
+      setJustConfigured(false);
+    }, 2500);
+  };
 
   const [messages, setMessages] = useState<MessageItem[]>([
     {
@@ -298,8 +308,52 @@ export function CopilotWidget({
             } else if (event.type === "action") {
               onAction?.(event.action, event.params);
 
-              if (event.action === "open_sample_preview" && event.params.sampleId) {
-                setActiveSampleId(String(event.params.sampleId));
+              if (event.action === "configure_estimator") {
+                triggerConfiguredEffect();
+              }
+
+              if (event.action === "open_sample_preview") {
+                const sid = String(event.params.sampleId || event.params.sample || "").toLowerCase().trim();
+                let matched = sampleProjects?.find(
+                  (p) =>
+                    p.id.toLowerCase() === sid ||
+                    p.number === sid ||
+                    p.name.toLowerCase().includes(sid) ||
+                    p.category.toLowerCase().includes(sid)
+                );
+                if (!matched) {
+                  if (
+                    sid.includes("mora") ||
+                    sid.includes("coffee") ||
+                    sid.includes("store") ||
+                    sid.includes("grocery") ||
+                    sid.includes("shop") ||
+                    sid.includes("ecommerce") ||
+                    sid.includes("e-commerce")
+                  ) {
+                    matched = sampleProjects?.find((p) => p.id === "mora-coffee");
+                  } else if (sid.includes("saas") || sid.includes("software") || sid.includes("stackline") || sid.includes("landing")) {
+                    matched = sampleProjects?.find((p) => p.id === "fieldnote");
+                  } else if (sid.includes("restaurant") || sid.includes("hearth") || sid.includes("food")) {
+                    matched = sampleProjects?.find((p) => p.id === "harbor-hearth");
+                  } else if (sid.includes("hotel") || sid.includes("ceylon") || sid.includes("villa")) {
+                    matched = sampleProjects?.find((p) => p.id === "ceylon-house");
+                  } else if (sid.includes("legal") || sid.includes("law")) {
+                    matched = sampleProjects?.find((p) => p.id === "northline-legal");
+                  } else if (sid.includes("health") || sid.includes("clinic")) {
+                    matched = sampleProjects?.find((p) => p.id === "luma-health");
+                  } else if (sid.includes("interior") || sid.includes("design")) {
+                    matched = sampleProjects?.find((p) => p.id === "aster-form");
+                  } else if (sid.includes("estate") || sid.includes("property")) {
+                    matched = sampleProjects?.find((p) => p.id === "kora-estates");
+                  } else if (sid.includes("learn") || sid.includes("course")) {
+                    matched = sampleProjects?.find((p) => p.id === "orbit-learning");
+                  }
+                }
+                if (matched) {
+                  setActiveSampleId(matched.id);
+                  triggerConfiguredEffect();
+                }
               }
             } else if (event.type === "error") {
               setMessages((prev) =>
@@ -337,9 +391,10 @@ export function CopilotWidget({
     handleSend(input);
   };
 
+  const currentStackId = pricingState?.stackId ?? pricingScope?.stack.id ?? "static";
   const currentStack =
+    TECH_STACKS.find((s) => s.id === currentStackId) ??
     pricingScope?.stack ??
-    TECH_STACKS.find((s) => s.id === (pricingState?.stackId ?? "static")) ??
     TECH_STACKS[0];
 
   const currentCurrency: Currency = pricingScope?.currency ?? pricingState?.currency ?? "LKR";
@@ -479,6 +534,9 @@ export function CopilotWidget({
                   <div className="copilot-preview-tag">
                     <Sparkles size={13} />
                     <span>Live Studio Proposal & Scope</span>
+                    {justConfigured && (
+                      <span className="copilot-updated-pill">✨ Auto-Configured</span>
+                    )}
                   </div>
                   <div className="copilot-currency-pills">
                     <button
@@ -500,7 +558,7 @@ export function CopilotWidget({
 
                 <div className="copilot-preview-content">
                   {/* Scope Price Card */}
-                  <div className="copilot-scope-card">
+                  <div className={`copilot-scope-card ${justConfigured ? "is-updated-pulse" : ""}`}>
                     <div className="copilot-scope-header">
                       <div>
                         <span className="copilot-scope-label">Selected Foundation</span>

@@ -94,7 +94,18 @@ export const COPILOT_TOOLS: ToolDefinition[] = [
         properties: {
           sampleId: {
             type: "string",
-            description: "ID or number of the sample project, e.g., 'harbor-hearth', 'northline-legal', 'ceylon-solis', 'atelier-eight', 'ayura-wellness', 'alto-property', 'stackline-saas', 'lanka-trade', 'summit-prep', 'lotus-gala', or '01'-'10'.",
+            enum: [
+              "harbor-hearth",
+              "northline-legal",
+              "ceylon-house",
+              "aster-form",
+              "luma-health",
+              "kora-estates",
+              "fieldnote",
+              "mora-coffee",
+              "orbit-learning",
+            ],
+            description: "ID of the sample project: 'mora-coffee' (e-commerce/grocery/store), 'harbor-hearth' (restaurant), 'ceylon-house' (hotel/hospitality), 'northline-legal' (law/consulting), 'luma-health' (clinic/healthcare), 'aster-form' (interior/design), 'kora-estates' (real estate), 'fieldnote' (saas/software), or 'orbit-learning' (education).",
           },
         },
         required: ["sampleId"],
