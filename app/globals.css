@@ -740,23 +740,6 @@ dd { margin: 7px 0 0; font-size: 12px; }
   border-radius: 0;
 }
 
-/* =========================================================================
-   Helper Copilot Widget
-   ========================================================================= */
-.copilot-root {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  z-index: 999;
-  font-family: var(--font-sans);
-}
-
-.copilot-launcher {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
 /* MACM Studio Assistant & Interactive Copilot Dock */
 .copilot-dock {
   position: fixed;

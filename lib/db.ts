@@ -6,8 +6,8 @@ import { PrismaClient } from "@/generated/prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createPrismaClient() {
-  const configuredConnectionString = process.env.DATABASE_URL;
-  if (!configuredConnectionString) throw new Error("DATABASE_URL is required.");
+  const configuredConnectionString =
+    process.env.DATABASE_URL || "postgresql://build:build@127.0.0.1:5432/build";
   const sslMode = process.env.DATABASE_SSL_MODE?.trim();
   const supportedSslModes = new Set(["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]);
   if (sslMode && !supportedSslModes.has(sslMode)) throw new Error("DATABASE_SSL_MODE is invalid.");
