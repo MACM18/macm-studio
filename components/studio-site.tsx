@@ -316,37 +316,34 @@ export function StudioSite() {
 
   const handleCopilotAction = (action: string, params: Record<string, unknown>) => {
     if (action === "configure_estimator") {
+      const updates: Record<string, unknown> = {};
       if (params.currency === "LKR" || params.currency === "USD") {
-        pricing.setCurrency(params.currency);
+        updates.currency = params.currency;
       }
       if (typeof params.stackId === "string" && ["static", "wordpress", "headless", "fullstack"].includes(params.stackId)) {
-        pricing.setStack(params.stackId as "static" | "wordpress" | "headless" | "fullstack");
+        updates.stackId = params.stackId;
       }
       if (Array.isArray(params.addonIds)) {
-        for (const addon of ADDONS) {
-          const shouldHave = params.addonIds.includes(addon.id);
-          const hasNow = pricing.addonIds.includes(addon.id);
-          if (shouldHave !== hasNow) {
-            pricing.toggleAddon(addon.id);
-          }
-        }
+        updates.addonIds = params.addonIds.filter((id) =>
+          ["payments", "auth", "api", "dedicated-backup"].includes(String(id))
+        );
       }
-      if (typeof params.fastTrack === "boolean" && params.fastTrack !== pricing.fastTrack) {
-        pricing.toggleFastTrack();
+      if (typeof params.fastTrack === "boolean") {
+        updates.fastTrack = params.fastTrack;
       }
       if (typeof params.extraInboxes === "number") {
-        pricing.setExtraInboxes(params.extraInboxes);
+        updates.extraInboxes = params.extraInboxes;
       }
       if (params.maintenancePlan === "none" || params.maintenancePlan === "care") {
-        pricing.setMaintenancePlan(params.maintenancePlan);
+        updates.maintenancePlan = params.maintenancePlan;
       }
       if (params.maintenanceBilling === "monthly" || params.maintenanceBilling === "yearly") {
-        pricing.setMaintenanceBilling(params.maintenanceBilling);
+        updates.maintenanceBilling = params.maintenanceBilling;
       }
-      if (typeof params.maintenancePriority === "boolean" && params.maintenancePriority !== pricing.maintenancePriority) {
-        pricing.toggleMaintenancePriority();
+      if (typeof params.maintenancePriority === "boolean") {
+        updates.maintenancePriority = params.maintenancePriority;
       }
-      scrollTo("#pricing-calculator");
+      pricing.configureScope(updates);
     } else if (action === "open_sample_preview") {
       const target = String(params.sampleId || "").toLowerCase();
       const found = SAMPLE_PROJECTS.find(
@@ -882,7 +879,18 @@ export function StudioSite() {
         </div>
       )}
 
-      <CopilotWidget onAction={handleCopilotAction} />
+      <CopilotWidget
+        onAction={handleCopilotAction}
+        pricingScope={pricing.scope}
+        pricingState={pricing}
+        onApplyScope={(scope) => pricing.configureScope(scope)}
+        onScrollTo={(sec) => scrollTo(sec)}
+        sampleProjects={SAMPLE_PROJECTS}
+        onOpenSample={(sampleId) => {
+          const found = SAMPLE_PROJECTS.find((p) => p.id === sampleId);
+          if (found) setSelectedSample(found);
+        }}
+      />
 
       <footer>
         <div className="container footer-grid">

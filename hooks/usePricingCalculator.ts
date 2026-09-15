@@ -36,7 +36,8 @@ type PricingAction =
   | { type: "SET_INBOXES"; count: number }
   | { type: "SET_MAINTENANCE_PLAN"; plan: "none" | "care" }
   | { type: "SET_MAINTENANCE_BILLING"; billing: MaintenanceBilling }
-  | { type: "TOGGLE_MAINTENANCE_PRIORITY" };
+  | { type: "TOGGLE_MAINTENANCE_PRIORITY" }
+  | { type: "CONFIGURE_SCOPE"; payload: Partial<PricingState> };
 
 const initialState: PricingState = {
   currency: "LKR",
@@ -78,6 +79,12 @@ function reducer(state: PricingState, action: PricingAction): PricingState {
       return state.maintenancePlan === "care"
         ? { ...state, maintenancePriority: !state.maintenancePriority }
         : state;
+    case "CONFIGURE_SCOPE":
+      return {
+        ...state,
+        ...action.payload,
+        ...(action.payload.maintenancePlan === "none" ? { maintenancePriority: false } : {}),
+      };
     default:
       return state;
   }
@@ -162,5 +169,6 @@ export function usePricingCalculator() {
     setMaintenancePlan: (plan: "none" | "care") => dispatch({ type: "SET_MAINTENANCE_PLAN", plan }),
     setMaintenanceBilling: (billing: MaintenanceBilling) => dispatch({ type: "SET_MAINTENANCE_BILLING", billing }),
     toggleMaintenancePriority: () => dispatch({ type: "TOGGLE_MAINTENANCE_PRIORITY" }),
+    configureScope: (payload: Partial<PricingState>) => dispatch({ type: "CONFIGURE_SCOPE", payload }),
   };
 }
