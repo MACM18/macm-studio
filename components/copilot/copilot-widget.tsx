@@ -20,6 +20,7 @@ import {
   Minimize2,
   Minus,
   CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import {
   TECH_STACKS,
@@ -172,6 +173,7 @@ export function CopilotWidget({
   const [activeTab, setActiveTab] = useState<"preview" | "chat">("chat");
   const [mouseActive, setMouseActive] = useState(true);
   const [activeSampleId, setActiveSampleId] = useState<string | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [justConfigured, setJustConfigured] = useState(false);
   const configureTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -258,11 +260,7 @@ export function CopilotWidget({
     setMessages(newMessages);
     setInput("");
     setLoading(true);
-
-    setMessages((prev) => [
-      ...prev,
-      { id: assistantMessageId, role: "assistant", content: "" },
-    ]);
+    setLoadingStatus("Analyzing project requirements...");
 
     try {
       const response = await fetch("/api/copilot/chat", {
@@ -298,13 +296,22 @@ export function CopilotWidget({
           try {
             const event = JSON.parse(dataStr);
             if (event.type === "text") {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === assistantMessageId
-                    ? { ...m, content: m.content + event.delta }
-                    : m
-                )
-              );
+              setMessages((prev) => {
+                const exists = prev.some((m) => m.id === assistantMessageId);
+                if (exists) {
+                  return prev.map((m) =>
+                    m.id === assistantMessageId
+                      ? { ...m, content: m.content + event.delta }
+                      : m
+                  );
+                }
+                return [
+                  ...prev,
+                  { id: assistantMessageId, role: "assistant", content: event.delta },
+                ];
+              });
+            } else if (event.type === "status") {
+              setLoadingStatus(event.message);
             } else if (event.type === "action") {
               onAction?.(event.action, event.params);
 
@@ -383,6 +390,7 @@ export function CopilotWidget({
       );
     } finally {
       setLoading(false);
+      setLoadingStatus(null);
     }
   };
 
@@ -724,24 +732,26 @@ export function CopilotWidget({
               {/* RIGHT COLUMN: Conversational Stream */}
               <section className={`copilot-col-chat ${activeTab === "chat" ? "mobile-show" : ""}`}>
                 <div className="copilot-chat-feed">
-                  {messages.map((m) => (
-                    <div key={m.id} className={`copilot-chat-row copilot-row-${m.role}`}>
-                      {m.role === "assistant" && (
-                        <div className="copilot-chat-avatar">
-                          <Image
-                            src="/ai-icon.jpg"
-                            alt="AI"
-                            width={24}
-                            height={24}
-                            className="copilot-avatar-img"
-                          />
+                  {messages
+                    .filter((m) => m.content.trim().length > 0)
+                    .map((m) => (
+                      <div key={m.id} className={`copilot-chat-row copilot-row-${m.role}`}>
+                        {m.role === "assistant" && (
+                          <div className="copilot-chat-avatar">
+                            <Image
+                              src="/ai-icon.jpg"
+                              alt="AI"
+                              width={24}
+                              height={24}
+                              className="copilot-avatar-img"
+                            />
+                          </div>
+                        )}
+                        <div className="copilot-chat-bubble">
+                          <MarkdownView content={m.content} />
                         </div>
-                      )}
-                      <div className="copilot-chat-bubble">
-                        <MarkdownView content={m.content} />
                       </div>
-                    </div>
-                  ))}
+                    ))}
 
                   {loading && (
                     <div className="copilot-chat-row copilot-row-assistant">
@@ -754,10 +764,11 @@ export function CopilotWidget({
                           className="copilot-avatar-img"
                         />
                       </div>
-                      <div className="copilot-chat-bubble copilot-typing-bubble">
-                        <span className="copilot-pulse-dot" />
-                        <span className="copilot-pulse-dot" />
-                        <span className="copilot-pulse-dot" />
+                      <div className="copilot-loading-chip">
+                        <Loader2 size={13} className="copilot-loading-spinner" />
+                        <span className="copilot-loading-label">
+                          {loadingStatus || "Engineering advisor is thinking..."}
+                        </span>
                       </div>
                     </div>
                   )}

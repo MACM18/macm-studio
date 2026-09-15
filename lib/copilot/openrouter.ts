@@ -2,6 +2,8 @@ import "server-only";
 import { getCopilotConfig } from "./config";
 import { COPILOT_TOOLS } from "./tools";
 import { searchKnowledge } from "./vector-store";
+import { TECH_STACKS, ADDONS } from "@/lib/pricing";
+import { SAMPLE_PROJECTS } from "@/lib/samples";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -21,44 +23,45 @@ export interface ChatMessage {
 export type CopilotStreamEvent =
   | { type: "text"; delta: string }
   | { type: "action"; action: string; params: Record<string, unknown> }
+  | { type: "status"; message: string }
   | { type: "error"; message: string }
   | { type: "done" };
 
-const SYSTEM_PROMPT = `You are the MACM Studio Helper Copilot, an engineering advisor and interactive concierge for macm.lk.
+export function buildSystemPrompt(): string {
+  const stacksList = TECH_STACKS.map(
+    (s) => `- '${s.id}' (${s.name} - LKR ${s.price.LKR.toLocaleString()} / $${s.price.USD}): ${s.description} (Delivery: ${s.delivery})`
+  ).join("\n   ");
+
+  const addonsList = ADDONS.map(
+    (a) => `- '${a.id}' (LKR ${a.price.LKR.toLocaleString()} / $${a.price.USD}): ${a.name} - ${a.detail}`
+  ).join("\n   ");
+
+  const samplesList = SAMPLE_PROJECTS.map(
+    (p) => `- '${p.id}': ${p.name} (${p.category}) - ${p.previewLabel}. Domain: ${p.domain}`
+  ).join("\n   ");
+
+  return `You are the MACM Studio Helper Copilot, an engineering advisor and interactive concierge for macm.lk.
 MACM is an engineering-led web design and development studio in Sri Lanka, crafting high-performance websites, managed WordPress setups, headless platforms, and full-stack web applications.
 
 CORE CAPABILITIES & TOOLS:
 1. 'configure_estimator': MANDATORY whenever you recommend or discuss a website foundation, add-on feature, or budget.
    Valid stackIds:
-   - 'static' (Custom Static Build - LKR 45,000 / $150): marketing landing pages, brochures, high conversion.
-   - 'wordpress' (Managed WordPress - LKR 60,000 / $200): easy content publishing, blogging, business websites.
-   - 'headless' (Headless CMS - LKR 100,000 / $350): premium speed, e-commerce, custom modern stores, decoupled frontends.
-   - 'fullstack' (Custom Full-Stack App - LKR 150,000 / $500): custom web apps, client portals, SaaS with admin dashboard.
+   ${stacksList}
    Valid addonIds:
-   - 'payments' (LKR 35,000 / $120): PayHere or Stripe payment gateway checkout.
-   - 'auth' (LKR 45,000 / $150): User accounts, permissions, member portals.
-   - 'api' (LKR 30,000 / $100): Custom API & webhooks integration.
-   - 'dedicated-backup' (LKR 10,000 / $30): Automated dedicated backup.
+   ${addonsList}
 
 2. 'open_sample_preview': MANDATORY whenever the user asks for examples, samples, past work, or industry directions.
-   You MUST ONLY use one of the 9 official studio sample project IDs:
-   - 'mora-coffee': E-commerce / retail / grocery / coffee brand store concept.
-   - 'harbor-hearth': Restaurant / dining / hospitality.
-   - 'northline-legal': Corporate / legal / consulting / law firm.
-   - 'ceylon-house': Boutique hotel / luxury stay / resort.
-   - 'aster-form': Interior design / architecture portfolio.
-   - 'luma-health': Wellness clinic / healthcare / medical practice.
-   - 'kora-estates': Property development / real estate.
-   - 'fieldnote': SaaS product landing page.
-   - 'orbit-learning': Education platform / courses / LMS.
-   NEVER make up or hallucinate non-existent project names like "Stackline SaaS".
+   Available official studio samples:
+   ${samplesList}
+   NEVER make up or hallucinate non-existent project names.
 
 CRITICAL INSTRUCTIONS:
 - Whenever you recommend a stack or add-on (e.g. headless for e-commerce, or WordPress with payment gateway), ALWAYS execute 'configure_estimator' with the corresponding stackId and addonIds! Do not just describe it in text; actually call the tool so the visitor's live estimator on the left updates instantly!
-- Whenever the user asks to see a sample or work (e.g., choice 1: see sample), ALWAYS execute 'open_sample_preview' with the best-matching sampleId from the 9 valid samples above!
+- Whenever the user asks to see a sample or work (e.g., choice 1: see sample), ALWAYS execute 'open_sample_preview' with the best-matching sampleId from the valid samples above!
 - Pricing: Default to LKR for Sri Lanka, USD for international clients.
 - Milestones: 10% kickoff, 50% working demo, 40% handover.
 - Speed & Conciseness: Keep responses crisp, practical, and under 3-4 sentences.`;
+}
 
 interface OpenRouterStreamChunk {
   choices?: Array<{
@@ -215,6 +218,14 @@ export function normalizeSampleId(raw: string): string {
   ) {
     return "orbit-learning";
   }
+  if (
+    target.includes("sora") ||
+    target.includes("events") ||
+    target.includes("wedding") ||
+    target === "10"
+  ) {
+    return "sora-events";
+  }
   return "mora-coffee";
 }
 
@@ -227,8 +238,11 @@ export async function* streamCopilotChat(
     return;
   }
 
+  yield { type: "status", message: "Analyzing project requirements..." };
+
+  const systemPrompt = buildSystemPrompt();
   const conversation: ChatMessage[] = [
-    { role: "system", content: SYSTEM_PROMPT },
+    { role: "system", content: systemPrompt },
     ...clientMessages.slice(-10),
   ];
 
@@ -269,7 +283,6 @@ export async function* streamCopilotChat(
           break;
         }
 
-        // If rate limited (429), unavailable (503/502), or bad model, try next model
         currentModelIndex++;
       } catch {
         currentModelIndex++;
@@ -374,6 +387,7 @@ export async function* streamCopilotChat(
       let toolResult = "";
 
       if (toolCall.name === "search_studio_knowledge") {
+        yield { type: "status", message: "Searching studio knowledge & pricing..." };
         const query = String(args.query || "");
         const category = args.category ? String(args.category) : undefined;
         const matches = await searchKnowledge(query, { category, limit: 3 });
@@ -386,17 +400,20 @@ export async function* streamCopilotChat(
           }))
         );
       } else if (toolCall.name === "configure_estimator") {
+        yield { type: "status", message: "Configuring project scope & calculator..." };
         const normalized = normalizeEstimatorArgs(args);
         emittedActions.add("configure_estimator");
         yield { type: "action", action: "configure_estimator", params: normalized };
         toolResult = JSON.stringify({ status: "success", configured: normalized });
       } else if (toolCall.name === "open_sample_preview") {
+        yield { type: "status", message: "Matching portfolio samples..." };
         const rawId = String(args.sampleId || args.sample || "");
         const cleanId = normalizeSampleId(rawId);
         emittedActions.add("open_sample_preview");
         yield { type: "action", action: "open_sample_preview", params: { sampleId: cleanId } };
         toolResult = JSON.stringify({ status: "success", openedSampleId: cleanId });
       } else if (toolCall.name === "get_booking_schedule") {
+        yield { type: "status", message: "Fetching consultation schedule..." };
         toolResult = JSON.stringify({
           duration: "30 minutes via Google Meet",
           bookingUrl: "/portal/book",
@@ -410,7 +427,6 @@ export async function* streamCopilotChat(
         emittedActions.add("get_booking_schedule");
         yield { type: "action", action: toolCall.name, params: args };
       } else {
-        // UI Action tools: emit to frontend and acknowledge
         emittedActions.add(toolCall.name);
         yield { type: "action", action: toolCall.name, params: args };
         toolResult = JSON.stringify({ status: "success", executedAction: toolCall.name, parameters: args });
@@ -423,6 +439,8 @@ export async function* streamCopilotChat(
         content: toolResult,
       });
     }
+
+    yield { type: "status", message: "Formulating recommendations..." };
   }
 
   // Fallback Intent Detection:
