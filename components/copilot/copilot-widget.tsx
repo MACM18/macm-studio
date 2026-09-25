@@ -7,7 +7,6 @@ import {
   X,
   Send,
   RotateCcw,
-  Check,
   ArrowRight,
   ExternalLink,
   Command,
@@ -69,6 +68,7 @@ export interface CopilotWidgetProps {
     highlights: string[];
     status: string;
     previewLabel: string;
+    theme: string;
   }>;
   onOpenSample?: (sampleId: string) => void;
 }
@@ -77,6 +77,7 @@ interface MessageItem {
   id: string;
   role: "user" | "assistant";
   content: string;
+  sampleIds?: string[];
 }
 
 const STARTER_PROMPTS = [
@@ -172,7 +173,6 @@ export function CopilotWidget({
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<"preview" | "chat">("chat");
   const [mouseActive, setMouseActive] = useState(true);
-  const [activeSampleId, setActiveSampleId] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
   const [justConfigured, setJustConfigured] = useState(false);
   const configureTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -313,7 +313,7 @@ export function CopilotWidget({
             } else if (event.type === "status") {
               setLoadingStatus(event.message);
             } else if (event.type === "action") {
-              onAction?.(event.action, event.params);
+              if (event.action !== "open_sample_preview") onAction?.(event.action, event.params);
 
               if (event.action === "configure_estimator") {
                 triggerConfiguredEffect();
@@ -358,8 +358,16 @@ export function CopilotWidget({
                   }
                 }
                 if (matched) {
-                  setActiveSampleId(matched.id);
-                  triggerConfiguredEffect();
+                  const matchedId = matched.id;
+                  setMessages((prev) => {
+                    const exists = prev.some((m) => m.id === assistantMessageId);
+                    if (exists) {
+                      return prev.map((m) => m.id === assistantMessageId
+                        ? { ...m, sampleIds: Array.from(new Set([...(m.sampleIds ?? []), matchedId])) }
+                        : m);
+                    }
+                    return [...prev, { id: assistantMessageId, role: "assistant", content: "", sampleIds: [matchedId] }];
+                  });
                 }
               }
             } else if (event.type === "error") {
@@ -412,10 +420,6 @@ export function CopilotWidget({
     demo: Math.round(currentTotal * 0.5),
     handover: currentTotal - Math.round(currentTotal * 0.1) - Math.round(currentTotal * 0.5),
   };
-
-  const activeSample = sampleProjects?.find(
-    (p) => p.id.toLowerCase() === activeSampleId?.toLowerCase()
-  );
 
   return (
     <>
@@ -693,39 +697,6 @@ export function CopilotWidget({
                       </a>
                     </div>
                   </div>
-
-                  {/* Sample Project Card */}
-                  {activeSample && (
-                    <div className="copilot-sample-card">
-                      <div className="copilot-sample-head">
-                        <div>
-                          <span className="copilot-sample-cat">{activeSample.category}</span>
-                          <h4 className="copilot-sample-name">{activeSample.name}</h4>
-                        </div>
-                        <span className="copilot-sample-domain">{activeSample.domain}</span>
-                      </div>
-                      <p className="copilot-sample-desc">{activeSample.description}</p>
-                      <ul className="copilot-sample-list">
-                        {activeSample.highlights.map((h, i) => (
-                          <li key={i}>
-                            <Check size={12} />
-                            <span>{h}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <button
-                        type="button"
-                        className="copilot-sample-link"
-                        onClick={() => {
-                          onOpenSample?.(activeSample.id);
-                          setIsOpen(false);
-                        }}
-                      >
-                        <span>Open Live Concept Preview</span>
-                        <ExternalLink size={13} />
-                      </button>
-                    </div>
-                  )}
                 </div>
               </section>
 
@@ -733,7 +704,7 @@ export function CopilotWidget({
               <section className={`copilot-col-chat ${activeTab === "chat" ? "mobile-show" : ""}`}>
                 <div className="copilot-chat-feed">
                   {messages
-                    .filter((m) => m.content.trim().length > 0)
+                    .filter((m) => m.content.trim().length > 0 || (m.sampleIds?.length ?? 0) > 0)
                     .map((m) => (
                       <div key={m.id} className={`copilot-chat-row copilot-row-${m.role}`}>
                         {m.role === "assistant" && (
@@ -748,7 +719,33 @@ export function CopilotWidget({
                           </div>
                         )}
                         <div className="copilot-chat-bubble">
-                          <MarkdownView content={m.content} />
+                          {m.content.trim() && <MarkdownView content={m.content} />}
+                          {m.sampleIds?.length ? (
+                            <div className="copilot-sample-suggestions" aria-label="Suggested sample previews">
+                              {m.sampleIds.map((sampleId) => {
+                                const sample = sampleProjects?.find((project) => project.id === sampleId);
+                                if (!sample) return null;
+                                return (
+                                  <button
+                                    key={sample.id}
+                                    type="button"
+                                    className={`copilot-sample-suggestion sample-theme-${sample.theme}`}
+                                    onClick={() => {
+                                      onOpenSample?.(sample.id);
+                                      setIsOpen(false);
+                                    }}
+                                  >
+                                    <span className="copilot-suggestion-copy">
+                                      <span className="copilot-suggestion-category">{sample.category}</span>
+                                      <strong>{sample.name}</strong>
+                                      <span className="copilot-suggestion-label">{sample.previewLabel}</span>
+                                    </span>
+                                    <span className="copilot-suggestion-action">View sample <ExternalLink size={13} /></span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
                     ))}

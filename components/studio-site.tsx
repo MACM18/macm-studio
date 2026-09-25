@@ -219,49 +219,6 @@ export function StudioSite() {
         updates.maintenancePriority = params.maintenancePriority;
       }
       pricing.configureScope(updates);
-    } else if (action === "open_sample_preview") {
-      const target = String(params.sampleId || params.sample || "").toLowerCase().trim();
-      let found = SAMPLE_PROJECTS.find(
-        (p) =>
-          p.id.toLowerCase() === target ||
-          p.number === target ||
-          p.category.toLowerCase().includes(target) ||
-          p.name.toLowerCase().includes(target)
-      );
-
-      if (!found) {
-        if (
-          target.includes("mora") ||
-          target.includes("coffee") ||
-          target.includes("store") ||
-          target.includes("grocery") ||
-          target.includes("shop") ||
-          target.includes("ecommerce") ||
-          target.includes("e-commerce")
-        ) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "mora-coffee");
-        } else if (target.includes("saas") || target.includes("software") || target.includes("stackline") || target.includes("landing")) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "fieldnote");
-        } else if (target.includes("hearth") || target.includes("restaurant") || target.includes("dining") || target.includes("food")) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "harbor-hearth");
-        } else if (target.includes("ceylon") || target.includes("hotel") || target.includes("villa") || target.includes("resort") || target.includes("hospitality")) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "ceylon-house");
-        } else if (target.includes("northline") || target.includes("legal") || target.includes("law") || target.includes("attorney")) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "northline-legal");
-        } else if (target.includes("luma") || target.includes("health") || target.includes("clinic") || target.includes("wellness") || target.includes("doctor")) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "luma-health");
-        } else if (target.includes("aster") || target.includes("form") || target.includes("interior") || target.includes("design") || target.includes("architecture")) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "aster-form");
-        } else if (target.includes("kora") || target.includes("estate") || target.includes("property") || target.includes("real estate")) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "kora-estates");
-        } else if (target.includes("orbit") || target.includes("learn") || target.includes("course") || target.includes("education")) {
-          found = SAMPLE_PROJECTS.find((p) => p.id === "orbit-learning");
-        }
-      }
-
-      if (found) {
-        setSelectedSample(found);
-      }
     } else if (action === "scroll_to_section") {
       if (typeof params.section === "string") {
         scrollTo(params.section);
