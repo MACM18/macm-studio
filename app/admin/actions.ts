@@ -92,6 +92,19 @@ export async function returnLeadToPending(leadId: string) {
   revalidatePath(`/admin/leads/${leadId}`);
 }
 
+export async function deleteLead(leadId: string) {
+  const { user: admin } = await requireAdmin();
+  await prisma.$transaction(async (tx) => {
+    const lead = await tx.lead.findUnique({ where: { id: leadId }, select: { id: true, project: { select: { id: true } } } });
+    if (!lead) throw new Error("Lead not found.");
+    await tx.auditLog.create({ data: { actorId: admin.id, action: "lead.deleted", entityType: "Lead", entityId: lead.id, metadata: { linkedProjectPreserved: Boolean(lead.project) } } });
+    await tx.lead.delete({ where: { id: leadId } });
+  });
+  revalidatePath("/admin");
+  revalidatePath("/admin/leads");
+  redirect("/admin/leads");
+}
+
 export async function retryLeadNotifications(leadId: string) {
   const { user: admin } = await requireAdmin();
   const delivered = await deliverLeadNotifications(leadId, { retryOnly: true });

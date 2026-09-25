@@ -63,7 +63,7 @@ OTP and project-update messages use direct authenticated SMTP. Configure SPF, DK
 
 The contact form submits a JSON `POST` request to `/api/lead`. The route validates and rate-limits the request, stores it in PostgreSQL, and confirms receipt immediately. After the response, the backend sends a branded administrative email and a Telegram Bot API alert. SMTP connection, greeting, and socket waits are bounded so a stalled mail server does not hold notification delivery indefinitely.
 
-Email and Telegram delivery are tracked separately. If either channel is unavailable, the saved enquiry is still accepted. Failures are visible in the admin workspace and can be retried without resending a channel that already succeeded.
+Administrative email, client confirmation email, and Telegram delivery are tracked separately. If a channel is unavailable, the saved enquiry is still accepted. Failures are visible in the admin workspace and can be retried without resending a channel that already succeeded. Administrators can permanently delete a lead request from the lead list after confirming the action; any linked project is preserved.
 
 The `hello@macm.lk` link is a normal `mailto:` link and opens the visitor's mail client; it is separate from the form submission flow.
 

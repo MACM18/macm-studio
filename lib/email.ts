@@ -50,6 +50,35 @@ export async function sendOtpEmail(email: string, otp: string) {
   });
 }
 
+export async function sendLeadConfirmationEmail(input: {
+  name: string;
+  email: string;
+  projectType: string;
+}) {
+  const safeName = escapeHtml(input.name);
+  const safeProjectType = escapeHtml(input.projectType);
+  const replyTo = process.env.LEAD_NOTIFICATION_EMAIL ?? "hello@macm.lk";
+  await mailTransport().sendMail({
+    from: from(),
+    to: input.email,
+    replyTo,
+    subject: "We received your MACM project enquiry",
+    text: `Hello ${input.name},
+
+Thanks for reaching out to MACM Studio. We received your enquiry about ${input.projectType}. Our team will review the details and get back to you.
+
+If you need to add anything, reply to this email or write to hello@macm.lk.
+
+MACM Studio
+Websites built with care`,
+    html: emailFrame(
+      "We’ve received your project enquiry.",
+      `<p style="margin:0 0 18px;color:#42516a;line-height:1.7">Hello ${safeName},</p><p style="margin:0 0 20px;color:#42516a;line-height:1.7">Thanks for reaching out to MACM Studio. Your enquiry has been received, and our team will review it and get back to you.</p><div style="padding:16px 18px;border-radius:14px;background:#f3f9ff;color:#33445f;line-height:1.65"><strong style="color:#10203f">Project type</strong><br />${safeProjectType}</div><p style="margin:22px 0 0;color:#64748b;font-size:13px;line-height:1.7">If you need to add anything, reply to this email or contact us at <a href="mailto:hello@macm.lk" style="color:#0070f3">hello@macm.lk</a>.</p>`,
+      "This is a confirmation of your enquiry to MACM Studio.",
+    ),
+  });
+}
+
 export async function sendLeadNotificationEmail(input: {
   id: string;
   name: string;

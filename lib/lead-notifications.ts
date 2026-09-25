@@ -1,7 +1,7 @@
 import "server-only";
 
 import { prisma } from "@/lib/db";
-import { sendLeadNotificationEmail } from "@/lib/email";
+import { sendLeadConfirmationEmail, sendLeadNotificationEmail } from "@/lib/email";
 import { sendLeadTelegramAlert } from "@/lib/telegram";
 
 type StoredLead = NonNullable<Awaited<ReturnType<typeof prisma.lead.findUnique>>>;
@@ -41,6 +41,23 @@ async function deliverEmail(lead: NotificationLead, retryOnly: boolean) {
   }
 }
 
+async function deliverConfirmationEmail(lead: NotificationLead, retryOnly: boolean) {
+  if (retryOnly && lead.confirmationEmailStatus === "SENT") return true;
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    await prisma.lead.update({ where: { id: lead.id }, data: { confirmationEmailStatus: "NOT_ATTEMPTED", confirmationEmailLastError: "SMTP is not configured." } });
+    return false;
+  }
+  await prisma.lead.update({ where: { id: lead.id }, data: { confirmationEmailStatus: "PENDING", confirmationEmailAttempts: { increment: 1 }, confirmationEmailLastError: null } });
+  try {
+    await sendLeadConfirmationEmail(lead);
+    await prisma.lead.update({ where: { id: lead.id }, data: { confirmationEmailStatus: "SENT", confirmationEmailLastError: null } });
+    return true;
+  } catch (error) {
+    await prisma.lead.update({ where: { id: lead.id }, data: { confirmationEmailStatus: "FAILED", confirmationEmailLastError: error instanceof Error ? error.message.slice(0, 500) : "Confirmation email delivery failed" } });
+    return false;
+  }
+}
+
 async function deliverTelegram(lead: NotificationLead, retryOnly: boolean) {
   if (retryOnly && lead.telegramStatus === "SENT") return true;
   if (!process.env.TELEGRAM_BOT_TOKEN || !process.env.TELEGRAM_CHAT_ID) {
@@ -62,9 +79,10 @@ export async function deliverLeadNotifications(leadId: string, options: { retryO
   const lead = await prisma.lead.findUnique({ where: { id: leadId } });
   if (!lead) throw new Error("Lead not found.");
   const safeLead = notificationLead(lead);
-  const [email, telegram] = await Promise.all([
+  const [email, confirmationEmail, telegram] = await Promise.all([
     deliverEmail(safeLead, options.retryOnly ?? false),
+    deliverConfirmationEmail(safeLead, options.retryOnly ?? false),
     deliverTelegram(safeLead, options.retryOnly ?? false),
   ]);
-  return { email, telegram };
+  return { email, confirmationEmail, telegram };
 }

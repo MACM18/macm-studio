@@ -164,6 +164,9 @@ model Lead {
   emailStatus        DeliveryStatus @default(NOT_ATTEMPTED)
   emailAttempts      Int            @default(0)
   emailLastError     String?
+  confirmationEmailStatus    DeliveryStatus @default(NOT_ATTEMPTED)
+  confirmationEmailAttempts  Int            @default(0)
+  confirmationEmailLastError String?
   telegramStatus     DeliveryStatus @default(NOT_ATTEMPTED)
   telegramAttempts   Int            @default(0)
   telegramLastError  String?
@@ -179,6 +182,7 @@ model Lead {
   @@index([email])
   @@index([webhookStatus])
   @@index([emailStatus])
+  @@index([confirmationEmailStatus])
   @@index([telegramStatus])
 }
 
