@@ -1,4 +1,4 @@
-import { ExternalLink, Video } from "lucide-react";
+import { ExternalLink, Video } from "@/components/macm-icons";
 import { requireAdmin } from "@/lib/auth-guards";
 import { googleCalendarIsConfigured, getGoogleCalendarTimeZone, listCalendarAppointments, GoogleCalendarError, type CalendarAppointment } from "@/lib/google-calendar";
 

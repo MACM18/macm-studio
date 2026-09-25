@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@/components/macm-icons";
 import { prisma } from "@/lib/db";
 import { calculateProjectProgress } from "@/lib/project-progress";
 import { requireAdmin } from "@/lib/auth-guards";

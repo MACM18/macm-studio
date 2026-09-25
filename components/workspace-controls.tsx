@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Sun } from "@/components/macm-icons";
 import { authClient } from "@/lib/auth-client";
 import { useLanguage } from "@/components/language-provider";
 

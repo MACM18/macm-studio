@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@/components/macm-icons";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
 import { readPrivateText } from "@/lib/private-data";

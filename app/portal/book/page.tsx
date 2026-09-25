@@ -1,4 +1,4 @@
-import { ArrowUpRight, CalendarClock, Clock3, Video } from "lucide-react";
+import { ArrowUpRight, CalendarClock, Clock3, Video } from "@/components/macm-icons";
 import { requireClient } from "@/lib/auth-guards";
 import { getGoogleBookingPageUrl, getGoogleCalendarTimeZone } from "@/lib/google-calendar";
 import { getServerLocale } from "@/lib/server-locale";

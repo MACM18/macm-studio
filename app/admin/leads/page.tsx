@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight } from "@/components/macm-icons";
 import { LeadDeleteButton } from "@/components/lead-delete-button";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";

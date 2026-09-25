@@ -4,27 +4,15 @@ import {
   ArrowDown,
   ArrowRight,
   Check,
-  CheckCircle2,
-  ChevronRight,
-  CircleDollarSign,
-  Code2,
-  Database,
   ExternalLink,
-  Globe2,
-  Layers3,
-  Mail,
   Menu,
   Minus,
   Moon,
   Plus,
   Send,
-  ServerCog,
-  ShieldCheck,
-  Sparkles,
   Sun,
   X,
-  Zap,
-} from "lucide-react";
+} from "@/components/macm-icons";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { usePricingCalculator } from "@/hooks/usePricingCalculator";
 import { ADDONS, Addon, Currency, INBOX_PRICE, MAINTENANCE_CARE, MAINTENANCE_PRIORITY, TECH_STACKS, formatMoney } from "@/lib/pricing";
@@ -48,28 +36,24 @@ const NAV_ITEMS: Array<[TranslationKey, string]> = [
 const SERVICES = [
   {
     index: "01",
-    icon: Globe2,
     title: "Custom website design",
     copy: "A clear, professional website that explains what you do, builds trust, and helps the right visitors get in touch.",
     tech: "Mobile-ready · Search-friendly · Clear content",
   },
   {
     index: "02",
-    icon: Layers3,
     title: "Managed WordPress websites",
     copy: "A website your team can update without waiting on a developer, with ongoing care to keep it secure and up to date.",
     tech: "Easy editing · Secure · Ongoing care",
   },
   {
     index: "03",
-    icon: Database,
     title: "Content-managed websites",
     copy: "A flexible content setup for growing teams that want to publish often, keep control, and add new sections over time.",
     tech: "Flexible content · Easy publishing · Ready to grow",
   },
   {
     index: "04",
-    icon: Code2,
     title: "Web apps & SaaS development",
     copy: "A custom online tool for the way your business works, with customer accounts, admin areas, payments, and useful automations.",
     tech: "Customer accounts · Admin tools · Integrations",
@@ -501,9 +485,9 @@ export function StudioSite() {
               </div>
             </div>
             <div className="metric-strip" aria-label={t("work.copy")}>
-              <div><Globe2 /><span><strong>{t("hero.websites")}</strong> {t("hero.websitesDetail")}</span></div>
-              <div><CircleDollarSign /><span><strong>10%</strong> {t("hero.start")}</span></div>
-              <div><ServerCog /><span><strong>{t("hero.rightSized")}</strong> {t("hero.vps")}</span></div>
+              <div><span><strong>{t("hero.websites")}</strong> {t("hero.websitesDetail")}</span></div>
+              <div><span><strong>10%</strong> {t("hero.start")}</span></div>
+              <div><span><strong>{t("hero.rightSized")}</strong> {t("hero.vps")}</span></div>
             </div>
           </div>
         </section>
@@ -515,9 +499,9 @@ export function StudioSite() {
               <p>{t("services.copy")}</p>
             </div>
             <div className="services-grid">
-              {SERVICES.map(({ index, icon: Icon }, serviceIndex) => (
+              {SERVICES.map(({ index }, serviceIndex) => (
                 <article className="service-card" key={index}>
-                  <div className="card-top"><span>{index}</span><Icon size={22} /></div>
+                  <div className="card-top"><span>{index}</span></div>
                   <h3>{t(`service.${serviceIndex + 1}.title` as TranslationKey)}</h3><p>{t(`service.${serviceIndex + 1}.copy` as TranslationKey)}</p><div className="tech-line">{t(`service.${serviceIndex + 1}.tech` as TranslationKey)}</div>
                 </article>
               ))}
@@ -529,9 +513,9 @@ export function StudioSite() {
           <div className="container work-grid">
             <div><span className="kicker">{t("standards.kicker")}</span><h2>{t("standards.title")}</h2></div>
             <div className="principles">
-              <div><Zap /><span><strong>{t("standards.one")}</strong>{t("standards.oneCopy")}</span></div>
-              <div><ShieldCheck /><span><strong>{t("standards.two")}</strong>{t("standards.twoCopy")}</span></div>
-              <div><Sparkles /><span><strong>{t("standards.three")}</strong>{t("standards.threeCopy")}</span></div>
+              <div><span><strong>{t("standards.one")}</strong>{t("standards.oneCopy")}</span></div>
+              <div><span><strong>{t("standards.two")}</strong>{t("standards.twoCopy")}</span></div>
+              <div><span><strong>{t("standards.three")}</strong>{t("standards.threeCopy")}</span></div>
             </div>
           </div>
         </section>
@@ -632,7 +616,7 @@ export function StudioSite() {
                 <fieldset className="choice-group inbox-group">
                   <legend><span>03</span> {t("pricing.email")}</legend>
                   <div className="inbox-panel">
-                    <div className="included-inbox"><Mail /><span><strong>1 custom inbox included</strong><small>name@yourdomain.lk · Roundcube · SPF, DKIM & DMARC</small></span><i>FREE</i></div>
+                    <div className="included-inbox"><span><strong>1 custom inbox included</strong><small>name@yourdomain.lk · Roundcube · SPF, DKIM & DMARC</small></span><i>FREE</i></div>
                     <div className="stepper-row">
                       <div><strong>Additional inboxes</strong><small>{formatMoney(INBOX_PRICE[pricing.currency], pricing.currency)} each</small></div>
                       <div className="stepper" aria-label="Additional business inboxes">
@@ -701,7 +685,7 @@ export function StudioSite() {
                   <strong>{MAINTENANCE_CARE.name}</strong>
                   <span className="maintenance-price">{formatMaintenanceMoney(MAINTENANCE_CARE[pricing.maintenanceBilling === "monthly" ? "monthlyPrice" : "yearlyPrice"][pricing.currency], pricing.currency)}<small>/{pricing.maintenanceBilling === "monthly" ? t("pricing.monthShort") : t("pricing.yearShort")}</small></span>
                   <span className="maintenance-card-copy">{t("pricing.careCopy")}</span>
-                  <ul>{MAINTENANCE_CARE.inclusions.map((inclusion, index) => <li key={inclusion}><Check size={14} />{t(`pricing.inclusion.${index + 1}` as TranslationKey)}</li>)}</ul>
+                  <ul>{MAINTENANCE_CARE.inclusions.map((inclusion, index) => <li key={inclusion}>{t(`pricing.inclusion.${index + 1}` as TranslationKey)}</li>)}</ul>
                 </button>
                 <label className={`maintenance-priority ${pricing.maintenancePriority ? "selected" : ""} ${pricing.maintenancePlan !== "care" ? "disabled" : ""}`}>
                   <input type="checkbox" checked={pricing.maintenancePriority} disabled={pricing.maintenancePlan !== "care"} onChange={() => { pricing.toggleMaintenancePriority(); trackEvent("maintenance_priority_changed", { enabled: !pricing.maintenancePriority }); }} />
@@ -723,7 +707,7 @@ export function StudioSite() {
             <div className="process-grid">
               {PROCESS.map((step, index) => (
                 <article className="process-card" key={step.no}>
-                  <div className="process-no"><span>{step.no}</span>{index < PROCESS.length - 1 && <ChevronRight />}</div>
+                  <div className="process-no"><span>{step.no}</span></div>
                   <span className="process-tag">{step.tag}</span><h3>{t(`process.${index === 0 ? "one" : index === 1 ? "two" : index === 2 ? "three" : "four"}` as TranslationKey)}</h3><p>{t(`process.${index === 0 ? "oneCopy" : index === 1 ? "twoCopy" : index === 2 ? "threeCopy" : "fourCopy"}` as TranslationKey)}</p>
                 </article>
               ))}
@@ -754,7 +738,7 @@ export function StudioSite() {
               <span className="kicker">{t("contact.kicker")}</span>
               <h2>{t("contact.title")}</h2>
               <p>{t("contact.copy")}</p>
-              <div className="contact-points"><span><CheckCircle2 /> {t("contact.direct")}</span><span><CheckCircle2 /> {t("contact.scope")}</span><span><CheckCircle2 /> {t("contact.ownership")}</span></div>
+              <div className="contact-points"><span>{t("contact.direct")}</span><span>{t("contact.scope")}</span><span>{t("contact.ownership")}</span></div>
               <a href="mailto:hello@macm.lk" onClick={() => trackEvent("email_contact_click", { location: "contact" })}>hello@macm.lk <ArrowRight /></a>
             </div>
             <form className="lead-form" onSubmit={submitLead} onFocus={() => { if (!leadStartedRef.current) { leadStartedRef.current = true; trackEvent("lead_form_started"); } }}>
@@ -792,7 +776,7 @@ export function StudioSite() {
               <h2 id="sample-modal-title">{selectedSample.name}</h2>
               <p className="sample-modal-domain">{selectedSample.domain}</p>
               <p>{selectedSampleLiveData?.description || selectedSample.description}</p>
-              <div className="sample-highlights"><span>{t("work.inside")}</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}><Check size={14} />{highlight}</li>)}</ul></div>
+              <div className="sample-highlights"><span>{t("work.inside")}</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}>{highlight}</li>)}</ul></div>
               {selectedSampleStatus === "available" ? (
                 <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer" onClick={() => trackEvent("sample_live_site_click", { project: selectedSample.id })}>{t("work.openLive")} <ExternalLink size={15} /></a>
               ) : selectedSampleStatus === "checking" ? (

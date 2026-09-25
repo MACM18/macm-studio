@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, CircleUserRound } from "lucide-react";
+import { ArrowUpRight, CalendarDays, CircleUserRound } from "@/components/macm-icons";
 import { requireClient } from "@/lib/auth-guards";
 import { updateProfile } from "@/app/portal/actions";
 import { prisma } from "@/lib/db";

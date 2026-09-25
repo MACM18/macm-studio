@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ExternalLink, Send, Unplug } from "lucide-react";
+import { ExternalLink, Send, Unplug } from "@/components/macm-icons";
 
 type ConnectionState = { enabled: boolean; connectedAt: string; lastMessageAt: string | null; username: string | null; displayName: string | null } | null;
 

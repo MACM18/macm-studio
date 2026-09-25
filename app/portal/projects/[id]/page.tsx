@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/components/macm-icons";
 import { requireClient } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
 import { calculateProjectProgress } from "@/lib/project-progress";

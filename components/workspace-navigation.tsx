@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Activity, BriefcaseBusiness, CalendarDays, ClipboardList, FileClock, Inbox, LayoutDashboard, Menu, UserRound, UsersRound, X } from "lucide-react";
+import { Activity, BriefcaseBusiness, CalendarDays, ClipboardList, FileClock, Inbox, LayoutDashboard, Menu, UserRound, UsersRound, X } from "@/components/macm-icons";
 import type { WorkspaceNavIcon, WorkspaceNavItem } from "@/components/workspace-shell";
 
 const icons: Record<WorkspaceNavIcon, typeof LayoutDashboard> = {

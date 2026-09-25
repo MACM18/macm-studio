@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, ClipboardEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, KeyRound, Mail, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight, KeyRound, Mail, RefreshCw } from "@/components/macm-icons";
 import { authClient } from "@/lib/auth-client";
 import { useLanguage } from "@/components/language-provider";
 

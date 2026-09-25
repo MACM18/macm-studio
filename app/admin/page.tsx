@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertCircle, ArrowUpRight, BriefcaseBusiness, CircleDollarSign, Inbox } from "lucide-react";
+import { AlertCircle, ArrowUpRight, BriefcaseBusiness, CircleDollarSign, Inbox } from "@/components/macm-icons";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth-guards";
 

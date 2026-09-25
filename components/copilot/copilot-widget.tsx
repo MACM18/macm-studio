@@ -21,7 +21,7 @@ import {
   Minus,
   CheckCircle2,
   Loader2,
-} from "lucide-react";
+} from "@/components/macm-icons";
 import {
   TECH_STACKS,
   ADDONS,

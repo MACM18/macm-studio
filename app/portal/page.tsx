@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays } from "lucide-react";
+import { ArrowUpRight, CalendarDays } from "@/components/macm-icons";
 import { requireClient } from "@/lib/auth-guards";
 import { prisma } from "@/lib/db";
 import { calculateProjectProgress } from "@/lib/project-progress";
