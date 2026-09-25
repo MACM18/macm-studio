@@ -19,7 +19,7 @@ const SAMPLE_DOMAINS = [
 const SAMPLE_HOST_PATTERN = /^sample(?:[1-9]|10)\.macm\.lk$/;
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-type SampleStatus = { available: boolean; status: number; description?: string };
+type SampleStatus = { available: boolean; status: number; embeddable?: boolean; description?: string };
 type SampleStatusMap = Record<string, SampleStatus>;
 
 let cachedStatuses: { expiresAt: number; statuses: SampleStatusMap } | null = null;
@@ -33,6 +33,34 @@ function isAllowedSampleUrl(value: string): URL | null {
   } catch {
     return null;
   }
+}
+
+function canEmbed(headers: Headers, sampleOrigin: string) {
+  const parentOrigin = new URL(process.env.BETTER_AUTH_URL ?? "https://macm.lk").origin;
+  const enforcedPolicies = (headers.get("content-security-policy") ?? "").split(",");
+  const ancestorPolicies = enforcedPolicies
+    .map((policy) => policy.match(/(?:^|;)\s*frame-ancestors\s+([^;]+)/i)?.[1]?.trim().split(/\s+/))
+    .filter((sources): sources is string[] => Boolean(sources));
+
+  if (ancestorPolicies.length) {
+    return ancestorPolicies.every((sources) => sources.some((source) => {
+      if (source === "*" || source === "https:") return true;
+      if (source === "'none'") return false;
+      if (source === "'self'") return parentOrigin === sampleOrigin;
+      try {
+        const sourceUrl = new URL(source.replace(/^([^:]+:\/\/)?\*\./, "$1wildcard."));
+        const hostname = sourceUrl.hostname.replace(/^wildcard\./, "");
+        const wildcard = source.includes("*.");
+        return sourceUrl.protocol === new URL(parentOrigin).protocol
+          && (wildcard ? new URL(parentOrigin).hostname.endsWith(`.${hostname}`) : hostname === new URL(parentOrigin).hostname);
+      } catch {
+        return false;
+      }
+    }));
+  }
+
+  const frameOptions = headers.get("x-frame-options")?.toLowerCase().split(",").map((value) => value.trim()) ?? [];
+  return !frameOptions.some((value) => value === "deny" || value === "sameorigin");
 }
 
 async function checkSample(domain: string): Promise<SampleStatus> {
@@ -57,6 +85,7 @@ async function checkSample(domain: string): Promise<SampleStatus> {
 
     if (!available) return { available, status: response.status };
 
+    const embeddable = canEmbed(response.headers, new URL(response.url).origin);
     const description = html.match(/<meta\b[^>]*(?:name|property)=["'](?:description|og:description)["'][^>]*content=["']([^"']*)["'][^>]*>/i)?.[1]
       ?.replace(/&nbsp;/gi, " ")
       .replace(/&amp;/gi, "&")
@@ -67,6 +96,7 @@ async function checkSample(domain: string): Promise<SampleStatus> {
     return {
       available,
       status: response.status,
+      embeddable,
       ...(description ? { description } : {}),
     };
   } catch {

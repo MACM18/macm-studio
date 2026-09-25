@@ -66,7 +66,7 @@ import { SAMPLE_PROJECTS, type SampleProject, type SamplePreviewState } from "@/
 type SampleMetadata = { description?: string };
 
 const FALLBACK_SAMPLE_STATUSES: Record<string, SamplePreviewState> = Object.fromEntries(
-  SAMPLE_PROJECTS.map((project) => [project.domain, project.status === "live" ? "available" : "unavailable"]),
+  SAMPLE_PROJECTS.map((project) => [project.domain, project.status === "live" ? "blocked" : "unavailable"]),
 );
 
 const PROCESS = [
@@ -118,13 +118,23 @@ function CurrencyToggle({ currency, setCurrency }: { currency: Currency; setCurr
   );
 }
 
-function SamplePreview({ project, state, checkingLabel, comingLabel, comingCopy }: { project: SampleProject; state: SamplePreviewState; checkingLabel: string; comingLabel: string; comingCopy: string }) {
+function SamplePreview({ project, state, checkingLabel, comingLabel, comingCopy, blockedCopy }: { project: SampleProject; state: SamplePreviewState; checkingLabel: string; comingLabel: string; comingCopy: string; blockedCopy: string }) {
   if (state === "checking") {
     return <div className="sample-preview-checking"><span className="sample-preview-pulse" /><p>{checkingLabel} {project.domain}…</p></div>;
   }
 
   if (state === "available") {
     return <iframe src={`https://${project.domain}`} title={`${project.name} live website preview`} loading="lazy" />;
+  }
+
+  if (state === "blocked") {
+    return (
+      <div className="sample-preview-blocked">
+        <span className="kicker">{project.category}</span>
+        <strong>{project.name}</strong>
+        <p>{blockedCopy}</p>
+      </div>
+    );
   }
 
   return (
@@ -333,14 +343,16 @@ export function StudioSite() {
     const controller = new AbortController();
 
     fetch("/api/sample-status", { cache: "no-store", signal: controller.signal })
-      .then((response) => response.json() as Promise<{ samples?: Record<string, { available?: boolean; description?: string }> }>)
+      .then((response) => response.json() as Promise<{ samples?: Record<string, { available?: boolean; embeddable?: boolean; description?: string }> }>)
       .then((result) => {
         if (!result.samples) return;
         const nextStatuses: Record<string, SamplePreviewState> = {};
         const nextMetadata: Record<string, SampleMetadata> = {};
         SAMPLE_PROJECTS.forEach((project) => {
           const liveData = result.samples?.[project.domain];
-          nextStatuses[project.domain] = liveData?.available ? "available" : "unavailable";
+          nextStatuses[project.domain] = liveData?.available
+            ? liveData.embeddable === false ? "blocked" : "available"
+            : "unavailable";
           if (liveData?.available && liveData.description) {
             nextMetadata[project.domain] = { description: liveData.description };
           }
@@ -548,12 +560,12 @@ export function StudioSite() {
                         <span className="sample-mini-kicker">{project.previewLabel}</span>
                         <strong>{project.name}</strong>
                         <span className="sample-mini-lines"><i /><i /><i /></span>
-                        <span className="sample-mini-pills"><i>{project.category}</i><i>{projectStatus === "available" ? t("work.live") : projectStatus === "checking" ? t("work.checking") : t("work.soon")}</i></span>
+                        <span className="sample-mini-pills"><i>{project.category}</i><i>{projectStatus === "available" || projectStatus === "blocked" ? t("work.live") : projectStatus === "checking" ? t("work.checking") : t("work.soon")}</i></span>
                       </span>
                     </span>
                   </span>
                   <span className="sample-card-info">
-                    <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={projectStatus === "available" ? "sample-status live" : "sample-status"}>{projectStatus === "available" ? t("work.live") : projectStatus === "checking" ? t("work.checking") : t("work.soon")}</span></span>
+                    <span className="sample-card-meta"><span>{project.number} / {project.category}</span><span className={projectStatus === "available" || projectStatus === "blocked" ? "sample-status live" : "sample-status"}>{projectStatus === "available" || projectStatus === "blocked" ? t("work.live") : projectStatus === "checking" ? t("work.checking") : t("work.soon")}</span></span>
                     <strong>{project.name}</strong>
                     <span>{projectDescription}</span>
                     <span className="sample-card-open">{t("work.open")} <ArrowRight size={15} /></span>
@@ -767,8 +779,8 @@ export function StudioSite() {
         <div className="sample-modal-backdrop" role="presentation" onMouseDown={() => setSelectedSample(null)}>
           <div className="sample-modal" role="dialog" aria-modal="true" aria-labelledby="sample-modal-title" onMouseDown={(event) => event.stopPropagation()}>
               <div className={`sample-modal-preview sample-theme-${selectedSample.theme}`}>
-              <div className="sample-modal-toolbar"><span className="sample-mini-dots"><i /><i /><i /></span><span>{selectedSample.domain}</span><span className={selectedSampleStatus === "available" ? "sample-status live" : "sample-status"}>{selectedSampleStatus === "available" ? t("work.live") : selectedSampleStatus === "checking" ? t("work.checking") : t("work.soon")}</span></div>
-              <SamplePreview project={selectedSample} state={selectedSampleStatus} checkingLabel={t("work.checkLive")} comingLabel={t("work.inStudio")} comingCopy={t("work.notLive")} />
+              <div className="sample-modal-toolbar"><span className="sample-mini-dots"><i /><i /><i /></span><span>{selectedSample.domain}</span><span className={selectedSampleStatus === "available" || selectedSampleStatus === "blocked" ? "sample-status live" : "sample-status"}>{selectedSampleStatus === "available" || selectedSampleStatus === "blocked" ? t("work.live") : selectedSampleStatus === "checking" ? t("work.checking") : t("work.soon")}</span></div>
+              <SamplePreview project={selectedSample} state={selectedSampleStatus} checkingLabel={t("work.checkLive")} comingLabel={t("work.inStudio")} comingCopy={t("work.notLive")} blockedCopy={t("work.embedBlocked")} />
             </div>
             <div className="sample-modal-details">
               <button className="sample-modal-close" type="button" aria-label={t("common.close")} onClick={() => setSelectedSample(null)}><X size={18} /></button>
@@ -777,7 +789,7 @@ export function StudioSite() {
               <p className="sample-modal-domain">{selectedSample.domain}</p>
               <p>{selectedSampleLiveData?.description || selectedSample.description}</p>
               <div className="sample-highlights"><span>{t("work.inside")}</span><ul>{selectedSample.highlights.map((highlight) => <li key={highlight}>{highlight}</li>)}</ul></div>
-              {selectedSampleStatus === "available" ? (
+              {(selectedSampleStatus === "available" || selectedSampleStatus === "blocked") ? (
                 <a className="button sample-live-link" href={`https://${selectedSample.domain}`} target="_blank" rel="noreferrer" onClick={() => trackEvent("sample_live_site_click", { project: selectedSample.id })}>{t("work.openLive")} <ExternalLink size={15} /></a>
               ) : selectedSampleStatus === "checking" ? (
                 <span className="sample-coming-note">{t("work.checkLive")}</span>

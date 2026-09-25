@@ -56,6 +56,7 @@ export const messages = {
     "work.inside": "Inside the concept",
     "work.openLive": "Open live site",
     "work.checkLive": "Checking live sample",
+    "work.embedBlocked": "This live site blocks embedded previews. Open the live site to view it.",
     "work.previewSoon": "Live preview coming soon",
     "work.inStudio": "IN THE STUDIO",
     "work.notLive": "This subdomain is not live yet. Once it is deployed, the live preview will appear here automatically.",

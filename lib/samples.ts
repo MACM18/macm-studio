@@ -1,4 +1,4 @@
-export type SamplePreviewState = "checking" | "available" | "unavailable";
+export type SamplePreviewState = "checking" | "available" | "unavailable" | "blocked";
 
 export interface SampleProject {
   id: string;
