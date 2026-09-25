@@ -419,14 +419,22 @@ export function StudioSite() {
       scope: pricing.scope,
     };
 
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 30_000);
     try {
       const response = await fetch("/api/lead", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
-      const result = (await response.json()) as { message?: string };
-      if (!response.ok) throw new Error(result.message || t("contact.error"));
+      const result = await response.json().catch(() => null) as { ok?: boolean; message?: string } | null;
+      if (!response.ok || result?.ok !== true) {
+        setStatus("error");
+        setStatusMessage(result?.message || t("contact.unconfirmed"));
+        trackEvent("lead_submit_error");
+        return;
+      }
       setStatus("sent");
       setStatusMessage(result.message || t("contact.sent"));
       trackEvent("lead_submitted", {
@@ -436,10 +444,12 @@ export function StudioSite() {
       });
       formElement.reset();
       if (summaryRef.current) summaryRef.current.value = pricing.scope.summary;
-    } catch (error) {
+    } catch {
       setStatus("error");
-      setStatusMessage(error instanceof Error ? error.message : t("contact.error"));
+      setStatusMessage(t("contact.unconfirmed"));
       trackEvent("lead_submit_error");
+    } finally {
+      window.clearTimeout(timeout);
     }
   };
 

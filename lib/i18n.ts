@@ -157,6 +157,7 @@ export const messages = {
     "contact.send": "Send project brief",
     "contact.sent": "Your project brief has been sent.",
     "contact.error": "Unable to send your enquiry.",
+    "contact.unconfirmed": "We couldn't confirm your submission. Please email hello@macm.lk before sending it again.",
     "contact.direct": "Direct access to the engineer",
     "contact.scope": "Clear scope before commitment",
     "contact.ownership": "Your code, infrastructure, and data",

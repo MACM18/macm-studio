@@ -23,9 +23,9 @@ function mailTransport() {
     port,
     secure: process.env.SMTP_SECURE === "true" || port === 465,
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
-    pool: true,
-    maxConnections: 2,
-    maxMessages: 40,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   });
 }
 

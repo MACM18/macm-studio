@@ -61,7 +61,7 @@ OTP and project-update messages use direct authenticated SMTP. Configure SPF, DK
 
 ## Contact form notifications
 
-The contact form submits a JSON `POST` request to `/api/lead`. The route validates and rate-limits the request, stores it in PostgreSQL, then sends a branded administrative email and a Telegram Bot API alert directly from the backend.
+The contact form submits a JSON `POST` request to `/api/lead`. The route validates and rate-limits the request, stores it in PostgreSQL, and confirms receipt immediately. After the response, the backend sends a branded administrative email and a Telegram Bot API alert. SMTP connection, greeting, and socket waits are bounded so a stalled mail server does not hold notification delivery indefinitely.
 
 Email and Telegram delivery are tracked separately. If either channel is unavailable, the saved enquiry is still accepted. Failures are visible in the admin workspace and can be retried without resending a channel that already succeeded.
 

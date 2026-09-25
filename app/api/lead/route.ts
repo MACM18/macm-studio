@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { after, NextRequest, NextResponse } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/db";
 import { normalizeEmail } from "@/lib/identity";
@@ -101,12 +101,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    try {
-      await deliverLeadNotifications(lead.id);
-    } catch {
-      // The lead is already stored. Notification infrastructure must not make
-      // the customer resubmit and create a duplicate enquiry.
-    }
+    after(async () => {
+      try {
+        await deliverLeadNotifications(lead.id);
+      } catch {
+        // The saved enquiry is independent of notification delivery. The
+        // admin workspace can retry notifications that did not complete.
+      }
+    });
     return NextResponse.json({ ok: true, leadId: lead.id, message: "Thanks — your project brief has been received safely." }, { status: 202 });
   } catch {
     return NextResponse.json({ ok: false, message: "We could not save your enquiry. Please try again shortly." }, { status: 503 });
